@@ -1,0 +1,4 @@
+packages:
+  - "front/apps/*"
+  - "front/packages/*"
+  - "docs/site"

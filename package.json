@@ -1,0 +1,15 @@
+{
+  "name": "omniflowcx-root",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@redocly/cli": "^1.18.1",
+    "@stoplight/spectral-cli": "^6.11.0",
+    "js-yaml": "^4.1.0",
+    "markdownlint-cli2": "^0.12.1",
+    "openapi-typescript": "^6.7.6",
+    "vitepress": "^1.0.0",
+    "vitest": "^1.6.0"
+  }
+}

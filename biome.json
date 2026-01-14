@@ -1,0 +1,16 @@
+{
+  "linter": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true
+  },
+  "files": {
+    "ignore": [
+      "reports/**",
+      "**/node_modules/**",
+      "**/.nuxt/**",
+      "**/.output/**"
+    ]
+  }
+}
