@@ -1,0 +1,21 @@
+services:
+  tools:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.tools
+    working_dir: /work
+    volumes:
+      - ..:/work
+      - m2:/root/.m2
+      - pnpm_store:/root/.pnpm-store
+    environment:
+      - USER_ID=${USER_ID}
+      - GROUP_ID=${GROUP_ID}
+    ports:
+      - "3001-3099:3001-3099"
+      - "8081-8199:8081-8199"
+      - "5005:5005"
+
+volumes:
+  m2:
+  pnpm_store:

@@ -1,0 +1,18 @@
+FROM node:20-bookworm
+
+RUN apt-get update && apt-get install -y \
+  openjdk-21-jdk \
+  git \
+  curl \
+  unzip \
+  ca-certificates \
+  bash \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+
+RUN corepack enable
+
+WORKDIR /work

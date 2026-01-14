@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MONO_IN_DOCKER=${MONO_IN_DOCKER:-1}
+
+if [[ "${1:-}" == "--native" ]]; then
+  MONO_IN_DOCKER=0
+  shift
+fi
+
+if [[ "$MONO_IN_DOCKER" == "1" ]]; then
+  export USER_ID=$(id -u)
+  export GROUP_ID=$(id -g)
+  docker compose -f infra/tools.compose.yaml run --rm tools node tools/mono.mjs "$@"
+else
+  node tools/mono.mjs "$@"
+fi
