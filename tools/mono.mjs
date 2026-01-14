@@ -123,7 +123,7 @@ if (cmd === "new") {
 
 const scopeList = await parseScopes();
 
-if (useChanged && scopeList.includes("__ALL__")) {
+if (useChanged && scopeList.some((s) => s.startsWith("__"))) {
   process.exit(runTask(cmd));
 }
 
