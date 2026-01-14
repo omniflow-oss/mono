@@ -1,0 +1,6 @@
+* @omniflowcx/core
+/back/** @omniflowcx/back
+/front/** @omniflowcx/front
+/contracts/** @omniflowcx/contracts
+/docs/** @omniflowcx/docs
+/tools/** @omniflowcx/tooling
