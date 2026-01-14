@@ -1,22 +1,16 @@
-FROM node:20-bookworm
+FROM maven:3.9.9-eclipse-temurin-21
 
 RUN apt-get update && apt-get install -y \
-  wget \
+  curl \
   gnupg \
   ca-certificates \
+  git \
+  unzip \
+  bash \
   && rm -rf /var/lib/apt/lists/*
 
-RUN wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor > /usr/share/keyrings/adoptium.gpg
-RUN echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main" > /etc/apt/sources.list.d/adoptium.list
-
-RUN apt-get update && apt-get install -y \
-  temurin-21-jdk \
-  git \
-  curl \
-  unzip \
-  ca-certificates \
-  bash \
-  maven \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+  && apt-get update && apt-get install -y nodejs \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
