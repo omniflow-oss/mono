@@ -1,0 +1,111 @@
+version: "3"
+
+tasks:
+  help:
+    cmds:
+      - echo "Use ./mono <command> [flags]"
+
+  bootstrap:
+    cmds:
+      - pnpm install
+
+  fmt:
+    cmds:
+      - pnpm biome format .
+      - mvn -f back/pom.xml -q spotless:apply
+
+  lint:
+    cmds:
+      - pnpm biome lint .
+      - mvn -f back/pom.xml -q spotless:check
+      - mvn -f back/pom.xml -q spotbugs:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml
+      - pnpm spectral lint contracts/rest/*.openapi.yaml
+      - pnpm markdownlint-cli2 "docs/**/*.md" "README.md"
+
+  typecheck:
+    cmds:
+      - pnpm -r --filter ./front... tsc --noEmit
+
+  test:
+    cmds:
+      - mvn -f back/pom.xml -q test
+      - pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml
+
+  build:
+    cmds:
+      - mvn -f back/pom.xml -q -DskipTests package
+      - pnpm -r --filter ./front... build
+
+  check:
+    deps: [lint, typecheck, test, build]
+
+  contracts:lint:
+    cmds:
+      - pnpm spectral lint contracts/rest/*.openapi.yaml
+
+  contracts:breaking:
+    cmds:
+      - node tools/contracts/breaking.mjs
+
+  contracts:build:
+    cmds:
+      - node tools/contracts/bundle-all.mjs
+      - node tools/contracts/gen-clients.mjs
+
+  docs:lint:
+    cmds:
+      - pnpm markdownlint-cli2 "docs/**/*.md" "README.md"
+
+  docs:build:
+    cmds:
+      - node tools/contracts/bundle-all.mjs
+      - node tools/contracts/gen-clients.mjs
+      - pnpm -C docs/site vitepress build
+
+  docs:serve:
+    cmds:
+      - pnpm -C docs/site vitepress dev
+
+  infra:up:
+    cmds:
+      - docker compose -f infra/tools.compose.yaml up -d
+
+  infra:down:
+    cmds:
+      - docker compose -f infra/tools.compose.yaml down
+
+  list:ports:
+    cmds:
+      - node tools/scaffold/ports.cjs list
+
+  list:scopes:
+    cmds:
+      - node tools/mono.mjs list scopes
+
+  doctor:
+    cmds:
+      - node tools/scaffold/ports.cjs doctor
+
+  new:app:
+    cmds:
+      - node tools/scaffold/actions/app.cjs
+
+  new:service:
+    cmds:
+      - node tools/scaffold/actions/service.cjs
+
+  new:lib:
+    cmds:
+      - node tools/scaffold/actions/lib.cjs
+
+  new:package:
+    cmds:
+      - node tools/scaffold/actions/package.cjs
+
+  tooling:test:
+    cmds:
+      - pnpm vitest run
+
+  tooling:test:e2e:
+    cmds:
+      - pnpm vitest run --dir tools/test/e2e
