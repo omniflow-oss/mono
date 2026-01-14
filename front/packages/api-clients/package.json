@@ -1,0 +1,8 @@
+{
+  "name": "@omniflowcx/api-clients",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "echo api-clients generated"
+  }
+}
