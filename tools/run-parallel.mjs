@@ -5,5 +5,9 @@ if (cmds.length === 0) process.exit(0);
 
 const procs = cmds.map((c) => spawn(c, { shell: true, stdio: "inherit" }));
 let code = 0;
-procs.forEach((p) => p.on("exit", (c) => { if (c) code = c; }));
+for (const proc of procs) {
+	proc.on("exit", (c) => {
+		if (c) code = c;
+	});
+}
 process.on("exit", () => process.exit(code));

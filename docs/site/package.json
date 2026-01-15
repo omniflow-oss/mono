@@ -1,0 +1,12 @@
+{
+	"name": "omniflowcx-docs",
+	"private": true,
+	"devDependencies": {
+		"vitepress": "^1.0.0"
+	},
+	"scripts": {
+		"build": "vitepress build",
+		"dev": "vitepress dev",
+		"preview": "vitepress preview"
+	}
+}

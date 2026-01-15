@@ -1,0 +1,6 @@
+{
+	"config": {
+		"default": true
+	},
+	"ignores": ["docs/PLAN.md", "docs/SPEC.md", "docs/plans/**/*.md"]
+}

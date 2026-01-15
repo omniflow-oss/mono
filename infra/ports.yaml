@@ -1,4 +1,5 @@
 back:
-  services: {}
+  services:
+    e2e-svc: 8082
 front:
   apps: {}

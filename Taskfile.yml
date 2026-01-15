@@ -11,15 +11,15 @@ tasks:
 
   fmt:
     cmds:
-      - pnpm biome format .
-      - mvn -f back/pom.xml -q spotless:apply
+      - pnpm biome format --write .
+      - mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
 
   lint:
     cmds:
       - pnpm biome lint .
-      - mvn -f back/pom.xml -q spotless:check
-      - mvn -f back/pom.xml -q spotbugs:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml
-      - pnpm spectral lint contracts/rest/*.openapi.yaml
+      - mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check
+      - mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml
+      - pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml
       - pnpm markdownlint-cli2 "docs/**/*.md" "README.md"
 
   typecheck:
@@ -41,7 +41,7 @@ tasks:
 
   contracts:lint:
     cmds:
-      - pnpm spectral lint contracts/rest/*.openapi.yaml
+      - pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml
 
   contracts:breaking:
     cmds:
@@ -60,11 +60,11 @@ tasks:
     cmds:
       - node tools/contracts/bundle-all.mjs
       - node tools/contracts/gen-clients.mjs
-      - pnpm -C docs/site vitepress build
+      - sh -c 'cd docs/site && pnpm vitepress build'
 
   docs:serve:
     cmds:
-      - pnpm -C docs/site vitepress dev
+      - sh -c 'cd docs/site && pnpm vitepress dev'
 
   infra:up:
     cmds:
@@ -88,19 +88,19 @@ tasks:
 
   new:app:
     cmds:
-      - node tools/scaffold/actions/app.cjs
+      - node tools/scaffold/actions/app.cjs {{.CLI_ARGS}}
 
   new:service:
     cmds:
-      - node tools/scaffold/actions/service.cjs
+      - node tools/scaffold/actions/service.cjs {{.CLI_ARGS}}
 
   new:lib:
     cmds:
-      - node tools/scaffold/actions/lib.cjs
+      - node tools/scaffold/actions/lib.cjs {{.CLI_ARGS}}
 
   new:package:
     cmds:
-      - node tools/scaffold/actions/package.cjs
+      - node tools/scaffold/actions/package.cjs {{.CLI_ARGS}}
 
   tooling:test:
     cmds:

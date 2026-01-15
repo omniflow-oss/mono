@@ -9,9 +9,22 @@
   <packaging>pom</packaging>
 
   <modules>
-  </modules>
+    <module>services/e2e-svc</module>
+</modules>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.44.0</version>
+        <configuration>
+          <java>
+            <googleJavaFormat />
+          </java>
+        </configuration>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
