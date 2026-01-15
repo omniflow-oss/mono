@@ -21,6 +21,7 @@ execSync(
 );
 
 const dest = path.join("back/services", name);
+fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.rmSync(dest, { recursive: true, force: true });
 moveDir(path.join(tmp, name), dest);
 
@@ -28,6 +29,7 @@ normalizeQuarkus(dest, name, port);
 insertModule("back/pom.xml", `services/${name}`);
 
 const contractPath = path.join("contracts/rest", `${name}.openapi.yaml`);
+fs.mkdirSync(path.dirname(contractPath), { recursive: true });
 if (!fs.existsSync(contractPath)) {
 	fs.writeFileSync(
 		contractPath,

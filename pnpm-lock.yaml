@@ -33,6 +33,12 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@25.0.8)
 
+  docs/site:
+    devDependencies:
+      vitepress:
+        specifier: ^1.0.0
+        version: 1.6.4(@algolia/client-search@5.46.3)(@types/node@25.0.8)(postcss@8.5.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(search-insights@2.17.3)
+
   front/packages/api-clients: {}
 
 packages:

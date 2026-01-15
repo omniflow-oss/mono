@@ -8,10 +8,6 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <modules>
-    <module>services/e2e-svc</module>
-</modules>
-
   <build>
     <plugins>
       <plugin>
