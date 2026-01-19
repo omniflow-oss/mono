@@ -1,49 +1,46 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import yaml from "js-yaml";
 
 const PORTS_PATH = "infra/ports.yaml";
-const SERVICES_DIR = "back/services";
 const CONTRACTS_DIR = "contracts/rest";
+const TMP_DIR = ".tmp";
 
 function getAllocatedPorts() {
 	const ports = yaml.load(readFileSync(PORTS_PATH, "utf8"));
-	// Format: { back: { services: { svc: port } }, ... }
-	return ports.back?.services ?? {};
+	return ports?.back?.services ?? {};
 }
 
 function getChangedServices() {
-	// List changed service contracts & services by name
-	// Returns array of names like ['orders', 'users']
-	const diff = spawnSync("git", ["diff", "--name-only", "origin/main"], {
+	const base = process.env.CHANGE_BASE || "origin/main";
+	const diff = spawnSync("git", ["diff", "--name-only", base], {
 		encoding: "utf8",
 	});
 	const files = diff.stdout.split("\n").filter(Boolean);
 	const changed = new Set();
 	for (const f of files) {
-		// contracts/rest/orders.openapi.yaml => orders
-		const m = f.match(/^contracts\/rest\/([a-z0-9\-]+)\.openapi.yaml$/);
-		if (m) {
-			changed.add(m[1]);
+		const contractMatch = f.match(
+			/^contracts\/rest\/([a-z0-9\-]+)\.openapi.yaml$/,
+		);
+		if (contractMatch) {
+			changed.add(contractMatch[1]);
 			continue;
 		}
-		const s = f.match(/^back\/services\/([a-z0-9\-]+)\//);
-		if (s) changed.add(s[1]);
+		const serviceMatch = f.match(/^back\/services\/([a-z0-9\-]+)\//);
+		if (serviceMatch) changed.add(serviceMatch[1]);
 	}
 	return Array.from(changed);
 }
 
-async function fetchOpenapi(service, port) {
-	// Try to fetch /q/openapi using fetch
-	const url =
-		process.env.DRIFT_BASE_URL?.replace(/\/$/, "") ||
-		`http://localhost:${port}`;
+async function fetchOpenapi(port) {
+	const baseUrl = process.env.DRIFT_BASE_URL?.replace(/\/$/, "");
+	const url = baseUrl || `http://localhost:${port}`;
 	const endpoint = `${url}/q/openapi`;
 	try {
 		const res = await fetch(endpoint);
 		if (!res.ok) return null;
 		return await res.text();
-	} catch (e) {
+	} catch {
 		return null;
 	}
 }
@@ -56,6 +53,7 @@ async function main() {
 		process.exit(0);
 	}
 
+	mkdirSync(TMP_DIR, { recursive: true });
 	let failed = false;
 	for (const svc of touched) {
 		const port = byService[svc];
@@ -63,20 +61,24 @@ async function main() {
 			console.warn(`No assigned port for service: ${svc}`);
 			continue;
 		}
+		const contractPath = `${CONTRACTS_DIR}/${svc}.openapi.yaml`;
+		if (!existsSync(contractPath)) {
+			console.warn(`Missing contract for service: ${svc}`);
+			continue;
+		}
 		console.log(`[drift-check] Service: ${svc} (port ${port})`);
-		const openapiText = await fetchOpenapi(svc, port);
+		const openapiText = await fetchOpenapi(port);
 		if (!openapiText) {
 			console.warn(`  Could not fetch /q/openapi for ${svc}`);
 			continue;
 		}
-		// Write temp
-		const tmpPath = `.tmp/openapi-${svc}.yaml`;
-		Bun.write(tmpPath, openapiText);
-		// Compare with repo contract
-		const contractPath = `${CONTRACTS_DIR}/${svc}.openapi.yaml`;
+
+		const tmpPath = `${TMP_DIR}/openapi-${svc}.yaml`;
+		writeFileSync(tmpPath, openapiText);
+
 		const result = spawnSync(
 			"pnpm",
-			["redocly", "diff", contractPath, tmpPath],
+			["redocly", "diff", "--severity=error", contractPath, tmpPath],
 			{ stdio: "inherit" },
 		);
 		if (result.status) {

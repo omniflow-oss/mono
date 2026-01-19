@@ -48,8 +48,24 @@ const run = (command, commandArgs) => {
 	return result.status ?? 1;
 };
 
-const runTask = (taskName, extra = []) =>
-	run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
+const taskAvailable = (() => {
+	const result = spawnSync("task", ["--version"], { stdio: "ignore" });
+	if (result.error && result.error.code === "ENOENT") return false;
+	return result.status === 0;
+})();
+
+const runTask = (taskName, extra = []) => {
+	if (!taskAvailable) {
+		if (taskName === "bootstrap") {
+			return run("pnpm", ["install"]);
+		}
+		log.error(
+			"Task runner not installed. Install go-task to run ./mono commands.",
+		);
+		return 1;
+	}
+	return run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
+};
 
 const listScopes = () => {
 	const roots = ["back/services", "back/libs", "front/apps", "front/packages"];
