@@ -54,15 +54,102 @@ const taskAvailable = (() => {
 	return result.status === 0;
 })();
 
+const runTaskFallback = (taskName, extra = []) => {
+	switch (taskName) {
+		case "bootstrap":
+			return run("pnpm", ["install"]);
+		case "fmt":
+			return run("bash", [
+				"-c",
+				"pnpm biome format --write . && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply",
+			]);
+		case "lint":
+			return run("bash", [
+				"-c",
+				'set -o pipefail && mkdir -p reports/lint && pnpm biome lint . | tee reports/lint/biome.log && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check | tee reports/lint/spotless.log && mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml | tee reports/lint/spotbugs.log && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/lint/spectral.log && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/lint/markdown.log',
+			]);
+		case "typecheck":
+			return run("bash", [
+				"-c",
+				"mkdir -p reports/typecheck && pnpm -r --filter ./front... tsc --noEmit | tee reports/typecheck/front-tsc.log",
+			]);
+		case "test":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/test && mvn -f back/pom.xml test | tee reports/test/maven.log && rm -rf reports/vitest && mkdir -p reports/vitest && pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml | tee reports/vitest/vitest.log",
+			]);
+		case "build":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && rm -rf reports/build && mkdir -p reports/build && mvn -f back/pom.xml -DskipTests package | tee reports/build/maven.log && pnpm -r --filter ./front... build | tee reports/build/front-build.log",
+			]);
+		case "check":
+			return run("bash", [
+				"-c",
+				"node tools/mono.mjs lint --changed && node tools/mono.mjs typecheck --changed && node tools/mono.mjs test --changed && node tools/mono.mjs build --changed",
+			]);
+		case "contracts:lint":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/contracts && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/contracts/spectral.log",
+			]);
+		case "contracts:breaking":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/contracts && node tools/contracts/breaking.mjs | tee reports/contracts/breaking.log",
+			]);
+		case "contracts:build":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/contracts && node tools/contracts/bundle-all.mjs | tee reports/contracts/bundle-all.log && node tools/contracts/gen-clients.mjs | tee reports/contracts/gen-clients.log && pnpm -r --filter ./front... typecheck | tee reports/contracts/typecheck.log",
+			]);
+		case "docs:lint":
+			return run("bash", [
+				"-c",
+				'set -o pipefail && mkdir -p reports/docs && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/docs/markdownlint.log',
+			]);
+		case "docs:build":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log && cd docs/site && pnpm vitepress build | tee ../../reports/docs/vitepress-build.log",
+			]);
+		case "list:ports":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/list && node tools/scaffold/ports.cjs list | tee reports/list/ports.log",
+			]);
+		case "list:scopes":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log",
+			]);
+		case "doctor":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log",
+			]);
+		case "tooling:test":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/tooling && pnpm vitest run | tee reports/tooling/vitest.log",
+			]);
+		case "tooling:test:e2e":
+			return run("bash", [
+				"-c",
+				"set -o pipefail && mkdir -p reports/tooling && pnpm vitest run --dir tools/test/e2e | tee reports/tooling/vitest-e2e.log",
+			]);
+		default:
+			log.error(
+				`Task runner not installed and no fallback for task: ${taskName}`,
+			);
+			if (extra.length) log.info(`Args: ${extra.join(" ")}`);
+			return 1;
+	}
+};
+
 const runTask = (taskName, extra = []) => {
 	if (!taskAvailable) {
-		if (taskName === "bootstrap") {
-			return run("pnpm", ["install"]);
-		}
-		log.error(
-			"Task runner not installed. Install go-task to run ./mono commands.",
-		);
-		return 1;
+		return runTaskFallback(taskName, extra);
 	}
 	return run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
 };
