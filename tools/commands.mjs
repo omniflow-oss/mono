@@ -54,6 +54,11 @@ export const COMMANDS = {
 			"set -o pipefail && rm -rf reports/build && mkdir -p reports/build && mvn -f back/pom.xml -DskipTests package | tee reports/build/maven.log && pnpm -r --filter ./front... build | tee reports/build/front-build.log",
 		],
 	},
+	check: {
+		command: "task",
+		args: ["check"],
+	},
+
 	"contracts:lint": {
 		command: "bash",
 		args: [
