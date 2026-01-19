@@ -138,6 +138,26 @@ const runTaskFallback = (taskName, extra = []) => {
 				"-c",
 				"set -o pipefail && mkdir -p reports/tooling && pnpm vitest run --dir tools/test/e2e | tee reports/tooling/vitest-e2e.log",
 			]);
+		case "new:app":
+			return run("bash", [
+				"-c",
+				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/app.cjs ${extra.join(" ")} | tee reports/new/app.log`,
+			]);
+		case "new:service":
+			return run("bash", [
+				"-c",
+				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/service.cjs ${extra.join(" ")} | tee reports/new/service.log`,
+			]);
+		case "new:lib":
+			return run("bash", [
+				"-c",
+				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/lib.cjs ${extra.join(" ")} | tee reports/new/lib.log`,
+			]);
+		case "new:package":
+			return run("bash", [
+				"-c",
+				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs ${extra.join(" ")} | tee reports/new/package.log`,
+			]);
 		default:
 			log.error(
 				`Task runner not installed and no fallback for task: ${taskName}`,
