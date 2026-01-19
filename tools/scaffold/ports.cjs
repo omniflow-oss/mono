@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const { execSync } = require("node:child_process");
 const yaml = require("js-yaml");
 
 const PORTS_PATH = "infra/ports.yaml";
@@ -63,6 +64,33 @@ function doctorPorts() {
 		if (p < RANGES.app.start || p > RANGES.app.end) {
 			throw new Error(`App port out of range: ${p}`);
 		}
+	}
+
+	// Check for ports in use on the system
+	const portsInUse = [];
+	for (const port of all) {
+		if (isPortInUse(port)) {
+			portsInUse.push(port);
+		}
+	}
+
+	if (portsInUse.length > 0) {
+		throw new Error(`Ports already in use: ${portsInUse.join(", ")}`);
+	}
+}
+
+function isPortInUse(port) {
+	try {
+		const result = execSync(
+			`lsof -i:${port} 2>/dev/null || netstat -an 2>/dev/null | grep ${port} || true`,
+			{
+				encoding: "utf8",
+			},
+		);
+		return result.trim().length > 0;
+	} catch (error) {
+		// lsof/netstat not available or failed to check
+		return false;
 	}
 }
 

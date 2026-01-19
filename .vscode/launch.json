@@ -1,0 +1,105 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Frontend: Nuxt Dev",
+			"cwd": "${workspaceFolder}/front/apps/${input:appName}",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["dev"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"type": "vitest",
+			"request": "launch",
+			"name": "Frontend: Vitest Tests",
+			"cwd": "${workspaceFolder}/front/packages/${input:packageName}",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["vitest", "run", "--no-coverage"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"type": "java",
+			"name": "Backend: Quarkus Dev (Debug)",
+			"request": "attach",
+			"hostName": "localhost",
+			"port": 5005,
+			"timeout": 30000
+		},
+		{
+			"type": "java",
+			"name": "Backend: Java Application (Debug)",
+			"projectName": "${input:serviceName}",
+			"request": "launch",
+			"mainClass": "io.quarkus.runner.GeneratedMain",
+			"args": [],
+			"vmArgs": "-Dquarkus.http.host=0.0.0.0 -Dquarkus.http.port=${input:servicePort}",
+			"classPaths": [],
+			"envFile": "${workspaceFolder}/.env"
+		},
+		{
+			"type": "java",
+			"name": "Backend: Maven Test",
+			"projectName": "${input:serviceName}",
+			"request": "launch",
+			"mainClass": "org.apache.maven.surefire.booter.ForkedBooter",
+			"classPaths": [],
+			"vmArgs": "-Dmaven.test.failure.ignore=true",
+			"args": [],
+			"noDebug": false
+		},
+		{
+			"name": "Tools: Mono Script",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/tools/mono.mjs",
+			"console": "integratedTerminal",
+			"args": ["${input:monoCommand}"]
+		},
+		{
+			"name": "Docs: VitePress Dev",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder}/docs/site",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["dev"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		}
+	],
+	"inputs": [
+		{
+			"id": "appName",
+			"type": "promptString",
+			"description": "Enter the app name (e.g., dashboard, admin)",
+			"default": "dashboard"
+		},
+		{
+			"id": "packageName",
+			"type": "promptString",
+			"description": "Enter the package name (e.g., api-clients, ui-components)",
+			"default": "api-clients"
+		},
+		{
+			"id": "serviceName",
+			"type": "promptString",
+			"description": "Enter the service name (e.g., user-service, payment-service)",
+			"default": "user-service"
+		},
+		{
+			"id": "servicePort",
+			"type": "promptString",
+			"description": "Enter the service port (e.g., 8081, 8082)",
+			"default": "8081"
+		},
+		{
+			"id": "monoCommand",
+			"type": "promptString",
+			"description": "Enter the mono command (e.g., dev, build, test)",
+			"default": "help"
+		}
+	]
+}

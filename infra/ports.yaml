@@ -1,4 +1,5 @@
 back:
   services: {}
 front:
-  apps: {}
+  apps:
+    test: 3001

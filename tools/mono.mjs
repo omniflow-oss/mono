@@ -16,6 +16,28 @@ for (let i = 0; i < args.length; i += 1) {
 const dryRun = flags.has("--dry-run");
 const useChanged = flags.has("--changed");
 const useAll = flags.has("--all");
+const verbose = flags.has("--verbose") || flags.has("-v");
+
+// Color output helpers
+const colors = {
+	reset: "\x1b[0m",
+	green: "\x1b[32m",
+	red: "\x1b[31m",
+	yellow: "\x1b[33m",
+	blue: "\x1b[34m",
+	magenta: "\x1b[35m",
+	cyan: "\x1b[36m",
+	gray: "\x1b[90m",
+};
+
+const log = {
+	success: (msg) => console.log(`${colors.green}✓${colors.reset} ${msg}`),
+	error: (msg) => console.error(`${colors.red}✗${colors.reset} ${msg}`),
+	warn: (msg) => console.warn(`${colors.yellow}⚠${colors.reset} ${msg}`),
+	info: (msg) => console.log(`${colors.blue}ℹ${colors.reset} ${msg}`),
+	step: (msg) => console.log(`${colors.cyan}▸${colors.reset} ${msg}`),
+	dim: (msg) => console.log(`${colors.gray}${msg}${colors.reset}`),
+};
 
 const run = (command, commandArgs) => {
 	if (dryRun) {
@@ -81,9 +103,83 @@ const runScoped = async (scopeList, action) => {
 };
 
 if (cmd === "help") {
-	console.log(
-		"Usage: ./mono <command> [--scope <path>] [--changed] [--all] [--dry-run]",
-	);
+	console.log(`
+${colors.cyan}OmniFlowCX Mono Tool${colors.reset}
+
+${colors.yellow}Usage:${colors.reset}
+  ./mono <command> [flags]
+
+${colors.yellow}Commands:${colors.reset}
+  bootstrap     Install all dependencies
+  dev           Start development servers
+  check         Run all quality checks (lint, typecheck, test, build)
+  lint          Run linters
+  typecheck     Run type checking
+  test          Run tests
+  build         Build projects
+  fmt           Format code
+  doctor        Check development environment
+
+${colors.yellow}Scaffolding:${colors.reset}
+  new <type> <name>  Create new service/app/lib/package
+    Types: service, app, lib, package
+
+${colors.yellow}Contracts:${colors.reset}
+  contracts:lint      Lint OpenAPI specs
+  contracts:breaking  Check breaking changes
+  contracts:build     Bundle specs and generate clients
+
+${colors.yellow}Documentation:${colors.reset}
+  docs:lint    Lint documentation
+  docs:build   Build documentation site
+  docs:serve   Start docs dev server
+
+${colors.yellow}Infrastructure:${colors.reset}
+  infra:up     Start Docker infrastructure
+  infra:down   Stop Docker infrastructure
+
+${colors.yellow}Utilities:${colors.reset}
+  list:ports   List allocated ports
+  list:scopes  List all scopes
+  tooling:test Run tooling tests
+
+${colors.yellow}Flags:${colors.reset}
+  --scope <path>  Run command for specific scope
+  --changed       Run only for changed files (default)
+  --all           Run for all scopes
+  --dry-run       Show what would run without executing
+  --native        Run without Docker
+  --verbose, -v   Enable verbose output
+
+${colors.yellow}Examples:${colors.reset}
+  ${colors.gray}# Start all changed services${colors.reset}
+  ./mono dev --changed
+
+  ${colors.gray}# Start all services${colors.reset}
+  ./mono dev --all
+
+  ${colors.gray}# Start specific service${colors.reset}
+  ./mono dev --scope back/services/user-service
+  ./mono dev --scope front/apps/dashboard
+
+  ${colors.gray}# Run checks for changed code${colors.reset}
+  ./mono check --changed
+
+  ${colors.gray}# Run specific checks for a scope${colors.reset}
+  ./mono lint --scope front/apps/dashboard
+
+  ${colors.gray}# Create new service${colors.reset}
+  ./mono new service payment
+
+  ${colors.gray}# Build contracts and generate clients${colors.reset}
+  ./mono contracts:build
+
+  ${colors.gray}# Preview documentation${colors.reset}
+  ./mono docs:serve
+
+  ${colors.gray}# Check environment health${colors.reset}
+  ./mono doctor
+`);
 	process.exit(0);
 }
 
@@ -192,12 +288,34 @@ if (cmd === "build") {
 
 if (cmd === "check") {
 	const steps = ["lint", "typecheck", "test", "build"];
-	for (const scope of scopeList) {
-		for (const step of steps) {
-			const status = run("node", ["tools/mono.mjs", step, "--scope", scope]);
-			if (status) process.exit(status);
-		}
+
+	if (scopeList.length === 0) {
+		log.warn("No changed scopes to check");
+		process.exit(0);
 	}
+
+	log.info(`Checking ${scopeList.length} scope(s): ${scopeList.join(", ")}`);
+	console.log();
+
+	for (const scope of scopeList) {
+		log.dim(`\n--- Checking: ${scope} ---`);
+		for (let i = 0; i < steps.length; i++) {
+			const step = steps[i];
+			log.step(`[${i + 1}/${steps.length}] ${step}...`);
+			const status = run("node", ["tools/mono.mjs", step, "--scope", scope]);
+			if (status) {
+				log.error(`${step} failed in ${scope}`);
+				log.info(`Run: ./mono ${step} --scope ${scope}`);
+				log.info(`Or: ./mono ${step} --changed`);
+				process.exit(status);
+			}
+			log.success(`${step} passed`);
+		}
+		log.success(`${scope} ✓`);
+	}
+
+	console.log();
+	log.success(`All checks passed for ${scopeList.length} scope(s)`);
 	process.exit(0);
 }
 

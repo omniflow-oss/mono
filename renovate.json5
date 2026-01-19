@@ -1,0 +1,54 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:base", ":semanticCommitTypeAll(chore)"],
+	"labels": ["dependencies"],
+	"schedule": ["every weekend"],
+	"timezone": "Etc/UTC",
+	"rebaseWhen": "conflicted",
+	"commitMessagePrefix": "chore(deps)",
+	"commitMessageAction": "update",
+	"commitMessageTopic": "{{depName}}",
+	"semanticCommits": "enabled",
+	"semanticCommitScope": "deps",
+	"semanticCommitType": "chore",
+	"packageRules": [
+		{
+			"matchUpdateTypes": ["minor", "patch"],
+			"automerge": false
+		},
+		{
+			"matchDepTypes": ["devDependencies"],
+			"automerge": false
+		},
+		{
+			"matchManagers": ["npm", "pnpm"],
+			"rangeStrategy": "auto"
+		},
+		{
+			"matchManagers": ["maven"],
+			"rangeStrategy": "auto"
+		}
+	],
+	"lockFileMaintenance": {
+		"enabled": true,
+		"schedule": ["every weekend"]
+	},
+	"prConcurrentLimit": 10,
+	"prHourlyLimit": 2,
+	"branchPrefix": "renovate/",
+	"ignorePaths": [
+		"**/node_modules/**",
+		"**/.nuxt/**",
+		"**/target/**",
+		"**/reports/**",
+		"**/.vitepress/**"
+	],
+	"vulnerabilityAlerts": {
+		"labels": ["security"],
+		"assignees": ["@omniflowcx/core"],
+		"commitMessagePrefix": "chore(security)",
+		"prPriority": "high"
+	},
+	"assignees": ["@omniflowcx/core"],
+	"reviewers": ["@omniflowcx/core"]
+}

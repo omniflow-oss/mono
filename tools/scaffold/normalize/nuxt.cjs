@@ -10,7 +10,7 @@ function normalizeNuxt(appDir, name, port) {
 		fmt: "biome format .",
 		lint: "biome lint .",
 		typecheck: "tsc --noEmit",
-		"test:ci": `vitest run --reporter=junit --outputFile=reports/vitest/${name}.junit.xml`,
+		"test:ci": `rm -rf reports && mkdir -p reports/vitest && vitest run --reporter=junit --outputFile=reports/vitest/${name}.junit.xml`,
 	};
 	fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
 

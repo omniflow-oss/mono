@@ -11,7 +11,7 @@ function normalizePackage(dir, name) {
 			fmt: "biome format .",
 			lint: "biome lint .",
 			typecheck: "tsc --noEmit",
-			"test:ci": `vitest run --reporter=junit --outputFile=reports/vitest/pkg-${name}.junit.xml`,
+			"test:ci": `rm -rf reports && mkdir -p reports/vitest && vitest run --reporter=junit --outputFile=reports/vitest/pkg-${name}.junit.xml`,
 			build: "tsc -p tsconfig.json",
 		},
 	};

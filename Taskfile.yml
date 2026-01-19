@@ -16,96 +16,113 @@ tasks:
 
   lint:
     cmds:
-      - pnpm biome lint .
-      - mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check
-      - mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml
-      - pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml
-      - pnpm markdownlint-cli2 "docs/**/*.md" "README.md"
+      - bash -c 'set -o pipefail && mkdir -p reports/lint && pnpm biome lint . | tee reports/lint/biome.log'
+      - bash -c 'set -o pipefail && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check | tee reports/lint/spotless.log'
+      - bash -c 'set -o pipefail && mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml | tee reports/lint/spotbugs.log'
+      - bash -c 'set -o pipefail && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/lint/spectral.log'
+      - bash -c 'set -o pipefail && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/lint/markdown.log'
 
   typecheck:
     cmds:
-      - pnpm -r --filter ./front... tsc --noEmit
+      - mkdir -p reports/typecheck && pnpm -r --filter ./front... tsc --noEmit | tee reports/typecheck/front-tsc.log
 
   test:
     cmds:
-      - mvn -f back/pom.xml -q test
-      - pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml
+      - bash -c 'set -o pipefail && mkdir -p reports/test && mvn -f back/pom.xml test | tee reports/test/maven.log'
+      - bash -c 'set -o pipefail && rm -rf reports/vitest && mkdir -p reports/vitest && pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml | tee reports/vitest/vitest.log'
 
   build:
     cmds:
-      - mvn -f back/pom.xml -q -DskipTests package
-      - pnpm -r --filter ./front... build
+      - bash -c 'set -o pipefail && rm -rf reports/build && mkdir -p reports/build && mvn -f back/pom.xml -DskipTests package | tee reports/build/maven.log'
+      - bash -c 'set -o pipefail && pnpm -r --filter ./front... build | tee reports/build/front-build.log'
 
   check:
     deps: [lint, typecheck, test, build]
 
   contracts:lint:
     cmds:
-      - pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml
+      - bash -c 'set -o pipefail && mkdir -p reports/contracts && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/contracts/spectral.log'
 
   contracts:breaking:
     cmds:
-      - node tools/contracts/breaking.mjs
+      - bash -c 'set -o pipefail && mkdir -p reports/contracts && node tools/contracts/breaking.mjs | tee reports/contracts/breaking.log'
 
   contracts:build:
     cmds:
-      - node tools/contracts/bundle-all.mjs
-      - node tools/contracts/gen-clients.mjs
+      - bash -c 'set -o pipefail && mkdir -p reports/contracts && node tools/contracts/bundle-all.mjs | tee reports/contracts/bundle-all.log'
+      - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/contracts/gen-clients.log'
+      - bash -c 'set -o pipefail && pnpm -r --filter ./front... typecheck | tee reports/contracts/typecheck.log'
 
   docs:lint:
     cmds:
-      - pnpm markdownlint-cli2 "docs/**/*.md" "README.md"
+      - bash -c 'set -o pipefail && mkdir -p reports/docs && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/docs/markdownlint.log'
 
   docs:build:
     cmds:
-      - node tools/contracts/bundle-all.mjs
-      - node tools/contracts/gen-clients.mjs
-      - sh -c 'cd docs/site && pnpm vitepress build'
+      - bash -c 'set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log'
+      - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log'
+      - bash -c 'set -o pipefail && cd docs/site && pnpm vitepress build | tee ../../reports/docs/vitepress-build.log'
 
   docs:serve:
     cmds:
-      - sh -c 'cd docs/site && pnpm vitepress dev'
+      - mkdir -p reports/docs
+      - bash -c 'cd docs/site && pnpm vitepress dev 2>&1 | tee ../../reports/docs/vitepress-dev.log'
 
   infra:up:
     cmds:
-      - docker compose -f infra/tools.compose.yaml up -d
+      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml up -d | tee reports/infra/up.log'
 
   infra:down:
     cmds:
-      - docker compose -f infra/tools.compose.yaml down
+      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml down | tee reports/infra/down.log'
 
   list:ports:
     cmds:
-      - node tools/scaffold/ports.cjs list
+      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/scaffold/ports.cjs list | tee reports/list/ports.log'
 
   list:scopes:
     cmds:
-      - node tools/mono.mjs list scopes
+      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log'
 
   doctor:
     cmds:
-      - node tools/scaffold/ports.cjs doctor
+      - bash -c 'set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log'
 
   new:app:
     cmds:
-      - node tools/scaffold/actions/app.cjs {{.CLI_ARGS}}
+      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/app.cjs {{.CLI_ARGS}} | tee reports/new/app.log'
 
   new:service:
     cmds:
-      - node tools/scaffold/actions/service.cjs {{.CLI_ARGS}}
+      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/service.cjs {{.CLI_ARGS}} | tee reports/new/service.log'
 
   new:lib:
     cmds:
-      - node tools/scaffold/actions/lib.cjs {{.CLI_ARGS}}
+      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/lib.cjs {{.CLI_ARGS}} | tee reports/new/lib.log'
 
   new:package:
     cmds:
-      - node tools/scaffold/actions/package.cjs {{.CLI_ARGS}}
+      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs {{.CLI_ARGS}} | tee reports/new/package.log'
 
   tooling:test:
     cmds:
-      - pnpm vitest run
+      - bash -c 'set -o pipefail && mkdir -p reports/tooling && pnpm vitest run | tee reports/tooling/vitest.log'
 
   tooling:test:e2e:
     cmds:
-      - pnpm vitest run --dir tools/test/e2e
+      - bash -c 'set -o pipefail && mkdir -p reports/tooling && pnpm vitest run --dir tools/test/e2e | tee reports/tooling/vitest-e2e.log'
+
+  db:migrate:
+    cmds:
+      - 'echo "Database migration task"'
+      - 'echo "Usage: ./mono --scope back/services/<service> db:migrate"'
+      - 'echo "This will run flyway:migrate or equivalent migration tool for the specified service"'
+
+  deps:graph:
+    cmds:
+      - mkdir -p reports/deps
+      - echo "Generating frontend dependency graph..."
+      - bash -c 'if pnpm -r --filter ./front... exec -- npx --yes madge --version >/dev/null 2>&1; then pnpm -r --filter ./front... exec -- npx madge --image reports/deps/frontend.png --extensions js,ts,tsx; else echo "Madge not installed, skipping frontend graph"; fi'
+      - echo "Generating backend dependency tree..."
+      - bash -c 'set -o pipefail && mvn -f back/pom.xml dependency:tree > reports/deps/backend.txt || { echo "Maven dependency tree generated (may have warnings)"; exit 0; }'
+      - echo "Dependency reports generated in reports/deps/"

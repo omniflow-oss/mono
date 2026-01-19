@@ -1,0 +1,25 @@
+{
+	"recommendations": [
+		"biomejs.biome",
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"redhat.java",
+		"vscjava.vscode-java-pack",
+		"eamodio.gitlens",
+		"usernamehw.errorlens",
+		"streetsidesoftware.code-spell-checker",
+		"42Crunch.vscode-openapi",
+		"redhat.vscode-yaml",
+		"vscodevim.vim",
+		"ms-vscode.test-adapter-converter",
+		"vitest.explorer",
+		"GitHub.vscode-github-actions",
+		"github.copilot",
+		"github.copilot-chat",
+		"bradlc.vscode-tailwindcss",
+		"unifiedjs.vscode-mdx",
+		"yzhang.markdown-all-in-one",
+		"shd101wyy.markdown-preview-enhanced",
+		"ms-vscode.makefile-tools"
+	]
+}

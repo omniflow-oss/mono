@@ -1,0 +1,94 @@
+{
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"quickfix.biome": "explicit",
+		"source.organizeImports.biome": "explicit",
+		"source.organizeImports": "explicit"
+	},
+	"editor.defaultFormatter": "biomejs.biome",
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[markdown]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[java]": {
+		"editor.defaultFormatter": "redhat.java"
+	},
+	"[yaml]": {
+		"editor.defaultFormatter": "redhat.vscode-yaml"
+	},
+	"files.exclude": {
+		"**/node_modules": true,
+		"**/.nuxt": true,
+		"**/target": true,
+		"**/reports": true,
+		"**/.pnpm-store": true,
+		"**/.vitepress/cache": true,
+		"**/.vitepress/dist": true,
+		"**/.output": true,
+		"**/.idea": true,
+		"**/.DS_Store": true
+	},
+	"files.watcherExclude": {
+		"**/node_modules/**": true,
+		"**/target/**": true,
+		"**/reports/**": true,
+		"**/.pnpm-store/**": true,
+		"**/.vitepress/**": true,
+		"**/.nuxt/**": true,
+		"**/.output/**": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/target": true,
+		"**/reports": true,
+		"**/.pnpm-store": true,
+		"**/.vitepress/dist": true,
+		"**/.vitepress/cache": true,
+		"**/.nuxt": true,
+		"**/.output": true
+	},
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"java.configuration.runtimes": [
+		{
+			"name": "JavaSE-21",
+			"path": "/usr/lib/jvm/java-21-openjdk-amd64",
+			"default": true
+		}
+	],
+	"java.compile.nullAnalysis.mode": "automatic",
+	"java.format.enabled": true,
+	"java.saveActions.organizeImports": true,
+	"maven.pomfile.autoUpdateEffectivePOM": false,
+	"biome.lsp.bin": "./node_modules/.bin/biome",
+	"biome.requireConfig": true,
+	"[openapi.yaml]": {
+		"editor.defaultFormatter": "42Crunch.vscode-openapi"
+	},
+	"[openapi.json]": {
+		"editor.defaultFormatter": "42Crunch.vscode-openapi"
+	},
+	"yaml.validate": ["openapi.yaml", "openapi.json"],
+	"yaml.schemas": {
+		"https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/schemas/v3.1/schema.json": "contracts/rest/*.openapi.yaml"
+	},
+	"vitest.enable": true,
+	"testing.automaticallyOpenPeekView": "never"
+}

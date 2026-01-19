@@ -15,6 +15,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 RUN curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 
-RUN corepack enable
+RUN corepack enable \
+  && corepack prepare pnpm@9.15.0 --activate
 
 WORKDIR /work
