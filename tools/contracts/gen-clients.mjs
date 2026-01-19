@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const baseDir = "front/packages/api-clients";
+mkdirSync(baseDir, { recursive: true });
 if (!existsSync(path.join(baseDir, "package.json"))) {
 	const pkg = {
 		name: "@omniflowcx/api-clients",

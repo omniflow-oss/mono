@@ -81,13 +81,28 @@ function doctorPorts() {
 
 function isPortInUse(port) {
 	try {
-		const result = execSync(
-			`lsof -i:${port} 2>/dev/null || netstat -an 2>/dev/null | grep ${port} || true`,
-			{
+		let result = "";
+		try {
+			result = execSync(`lsof -iTCP:${port} -sTCP:LISTEN -P -n 2>/dev/null`, {
 				encoding: "utf8",
-			},
-		);
-		return result.trim().length > 0;
+			});
+		} catch (err1) {
+			try {
+				result = execSync(`ss -ltn 'sport = :${port}' 2>/dev/null`, {
+					encoding: "utf8",
+				});
+			} catch (err2) {
+				try {
+					result = execSync(
+						`netstat -an 2>/dev/null | grep ':${port} ' || true`,
+						{ encoding: "utf8" },
+					);
+				} catch {
+					result = "";
+				}
+			}
+		}
+		return result && /(^|\n).*\b${port}\b/.test(result);
 	} catch (error) {
 		// lsof/netstat not available or failed to check
 		return false;

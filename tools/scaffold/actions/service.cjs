@@ -15,8 +15,17 @@ if (!name || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
 
 const port = allocateServicePort(name);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "quarkus-"));
-execSync(
-	`mvn io.quarkus.platform:quarkus-maven-plugin:3.30.6:create -DprojectGroupId=${DEFAULT_GROUP_ID} -DprojectArtifactId=${name} -Dextensions='rest' -DoutputDirectory=${tmp}`,
+const { spawnSync } = require("node:child_process");
+
+spawnSync(
+	"mvn",
+	[
+		"io.quarkus.platform:quarkus-maven-plugin:3.30.6:create",
+		`-DprojectGroupId=${DEFAULT_GROUP_ID}`,
+		`-DprojectArtifactId=${name}`,
+		"-Dextensions=rest",
+		`-DoutputDirectory=${tmp}`,
+	],
 	{ stdio: "inherit" },
 );
 

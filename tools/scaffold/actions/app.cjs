@@ -13,8 +13,18 @@ if (!name || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
 
 const port = allocateAppPort(name);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "nuxt-app-"));
-execSync(
-	`pnpm create nuxt@latest -- -t github:nuxt-ui-templates/dashboard ${tmp}`,
+const { spawnSync } = require("node:child_process");
+
+spawnSync(
+	"pnpm",
+	[
+		"create",
+		"nuxt@latest",
+		"--",
+		"-t",
+		"github:nuxt-ui-templates/dashboard",
+		tmp,
+	],
 	{ stdio: "inherit" },
 );
 

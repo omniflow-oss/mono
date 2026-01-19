@@ -51,7 +51,25 @@ function normalizeQuarkus(serviceDir, name, port) {
 		"quarkus.http.host=0.0.0.0",
 		`quarkus.application.name=${name}`,
 	];
-	fs.appendFileSync(propsPath, `\n${lines.join("\n")}\n`);
+	if (!fs.existsSync(propsPath)) {
+		fs.writeFileSync(propsPath, `${lines.join("\n")}\n`);
+	} else {
+		let props = fs.readFileSync(propsPath, "utf8");
+		for (const l of lines) {
+			const k = l.split("=")[0];
+			const exp = new RegExp(`^${k}=.*$`, "m");
+			if (exp.test(props)) {
+				props = props.replace(exp, l);
+			} else {
+				props += `\n${l}`;
+			}
+		}
+		fs.writeFileSync(
+			propsPath,
+			`${props.replace(/\n{2,}/g, "\n")}
+`,
+		);
+	}
 }
 
 module.exports = { normalizeQuarkus };
