@@ -9,5 +9,6 @@ node_modules/
 .output/
 .idea/
 .DS_Store
-.vitepress/cache/
-.vitepress/dist/
+**/.vitepress/cache/
+**/.vitepress/dist/
+target/
