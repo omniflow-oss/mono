@@ -57,7 +57,10 @@ const taskAvailable = (() => {
 const runTaskFallback = (taskName, extra = []) => {
 	switch (taskName) {
 		case "bootstrap":
-			return run("pnpm", ["install"]);
+			return run("bash", [
+				"-c",
+				"pnpm install; if [ -f docs/site/package.json ]; then pnpm -C docs/site install; fi",
+			]);
 		case "fmt":
 			return run("bash", [
 				"-c",
