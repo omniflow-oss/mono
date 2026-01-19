@@ -61,20 +61,20 @@ tasks:
     cmds:
       - bash -c 'set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log'
       - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log'
-      - bash -c 'set -o pipefail && pnpm -C docs/site vitepress build | tee reports/docs/vitepress-build.log'
+      - bash -c 'set -o pipefail && pnpm -C docs/site run build | tee reports/docs/vitepress-build.log'
 
   docs:serve:
     cmds:
       - mkdir -p reports/docs
-      - bash -c 'pnpm -C docs/site vitepress dev 2>&1 | tee reports/docs/vitepress-dev.log'
+      - bash -c 'pnpm -C docs/site run dev 2>&1 | tee reports/docs/vitepress-dev.log'
 
   infra:up:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml up -d | tee reports/infra/up.log'
+      - bash -c 'set -o pipefail && mkdir -p reports/infra && USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose -f infra/tools.compose.yaml up -d | tee reports/infra/up.log'
 
   infra:down:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml down | tee reports/infra/down.log'
+      - bash -c 'set -o pipefail && mkdir -p reports/infra && USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose -f infra/tools.compose.yaml down --remove-orphans | tee reports/infra/down.log'
 
   list:ports:
     cmds:
@@ -86,7 +86,7 @@ tasks:
 
   doctor:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log'
+      - bash -c 'set -o pipefail && mkdir -p reports/doctor && node tools/tooling/doctor.mjs | tee reports/doctor/tooling.log && node tools/scaffold/ports.cjs doctor | tee reports/doctor/ports.log'
 
   new:app:
     cmds:

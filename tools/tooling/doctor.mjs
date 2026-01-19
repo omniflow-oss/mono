@@ -1,10 +1,15 @@
 import { spawnSync } from "node:child_process";
 
+import { existsSync } from "node:fs";
+
+const inDocker =
+	existsSync("/.dockerenv") || process.env.MONO_IN_DOCKER === "1";
+
 const checks = [
 	{ name: "node", cmd: "node", args: ["--version"] },
 	{ name: "pnpm", cmd: "pnpm", args: ["--version"] },
 	{ name: "mvn", cmd: "mvn", args: ["-v"] },
-	{ name: "docker", cmd: "docker", args: ["--version"] },
+	...(inDocker ? [] : [{ name: "docker", cmd: "docker", args: ["--version"] }]),
 	{ name: "task", cmd: "task", args: ["--version"] },
 ];
 
