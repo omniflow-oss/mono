@@ -178,6 +178,34 @@ export const COMMANDS = {
 			`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs ${extra.join(" ")} | tee reports/new/package.log`,
 		],
 	},
+	"delete:app": {
+		command: "bash",
+		args: (extra) => [
+			"-c",
+			`set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-app.cjs ${extra.join(" ")} | tee reports/delete/app.log`,
+		],
+	},
+	"delete:service": {
+		command: "bash",
+		args: (extra) => [
+			"-c",
+			`set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-service.cjs ${extra.join(" ")} | tee reports/delete/service.log`,
+		],
+	},
+	"delete:lib": {
+		command: "bash",
+		args: (extra) => [
+			"-c",
+			`set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-lib.cjs ${extra.join(" ")} | tee reports/delete/lib.log`,
+		],
+	},
+	"delete:package": {
+		command: "bash",
+		args: (extra) => [
+			"-c",
+			`set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-package.cjs ${extra.join(" ")} | tee reports/delete/package.log`,
+		],
+	},
 };
 
 export function resolveCommand(cmd, args) {
@@ -213,6 +241,11 @@ export function resolveCommand(cmd, args) {
 	if (cmd === "new") {
 		const target = args[1];
 		return { name: `new:${target}`, extra: args.slice(2) };
+	}
+
+	if (cmd === "delete") {
+		const target = args[1];
+		return { name: `delete:${target}`, extra: args.slice(2) };
 	}
 
 	return { name: cmd, extra: [] };

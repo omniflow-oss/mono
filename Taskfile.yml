@@ -104,6 +104,22 @@ tasks:
     cmds:
       - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs {{.CLI_ARGS}} | tee reports/new/package.log'
 
+  delete:app:
+    cmds:
+      - bash -c 'set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-app.cjs {{.CLI_ARGS}} | tee reports/delete/app.log'
+
+  delete:service:
+    cmds:
+      - bash -c 'set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-service.cjs {{.CLI_ARGS}} | tee reports/delete/service.log'
+
+  delete:lib:
+    cmds:
+      - bash -c 'set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-lib.cjs {{.CLI_ARGS}} | tee reports/delete/lib.log'
+
+  delete:package:
+    cmds:
+      - bash -c 'set -o pipefail && mkdir -p reports/delete && node tools/scaffold/actions/delete-package.cjs {{.CLI_ARGS}} | tee reports/delete/package.log'
+
   tooling:test:
     cmds:
       - bash -c 'set -o pipefail && mkdir -p reports/tooling && pnpm vitest run | tee reports/tooling/vitest.log'

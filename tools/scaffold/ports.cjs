@@ -42,6 +42,22 @@ function allocateAppPort(name) {
 	return port;
 }
 
+function deleteServicePort(name) {
+	const data = readPorts();
+	if (data.back?.services?.[name] !== undefined) {
+		delete data.back.services[name];
+		writePorts(data);
+	}
+}
+
+function deleteAppPort(name) {
+	const data = readPorts();
+	if (data.front?.apps?.[name] !== undefined) {
+		delete data.front.apps[name];
+		writePorts(data);
+	}
+}
+
 function listPorts() {
 	const data = readPorts();
 	console.log(yaml.dump(data, { lineWidth: -1 }));
@@ -104,6 +120,8 @@ module.exports = {
 	allocateNextPort,
 	allocateServicePort,
 	allocateAppPort,
+	deleteServicePort,
+	deleteAppPort,
 	listPorts,
 	doctorPorts,
 };

@@ -120,7 +120,9 @@ ${colors.yellow}Commands:${colors.reset}
   doctor        Check development environment
 
 ${colors.yellow}Scaffolding:${colors.reset}
-  new <type> <name>  Create new service/app/lib/package
+  new <type> <name>     Create new service/app/lib/package
+    Types: service, app, lib, package
+  delete <type> <name>  Delete service/app/lib/package
     Types: service, app, lib, package
 
 ${colors.yellow}Contracts:${colors.reset}
