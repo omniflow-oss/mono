@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
 import path from "node:path";
 import { getChangedScopes } from "./changed.mjs";
 import {
 	CHECK_STEPS,
 	COMMANDS,
 	SCOPED_COMMANDS,
-	SPECIAL_COMMANDS,
 	resolveCommand,
 } from "./commands.mjs";
 import {
@@ -78,28 +76,8 @@ const runTask = (taskName, extra = []) => {
 		log.error(`Unknown task: ${taskName}`);
 		return 1;
 	}
-	if (SPECIAL_COMMANDS.has(taskName)) {
-		const command = entry.command;
-		const args =
-			typeof entry.args === "function" ? entry.args(extra) : entry.args;
-		return run(command, args);
-	}
 	if (!taskAvailable()) ensureTask();
 	return run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
-};
-
-const listScopes = () => {
-	const roots = ["back/services", "back/libs", "front/apps", "front/packages"];
-	for (const root of roots) {
-		try {
-			const entries = readdirSync(root, { withFileTypes: true });
-			for (const entry of entries) {
-				if (entry.isDirectory()) console.log(path.join(root, entry.name));
-			}
-		} catch {
-			// ignore missing roots
-		}
-	}
 };
 
 const parseScopes = async () => {
@@ -204,12 +182,6 @@ ${colors.yellow}Examples:${colors.reset}
 }
 
 const resolved = resolveCommand(cmd, args);
-if (SPECIAL_COMMANDS.has(resolved.name)) {
-	if (resolved.name === "list:scopes") {
-		listScopes();
-		process.exit(0);
-	}
-}
 
 const scopeList = await parseScopes();
 

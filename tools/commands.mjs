@@ -121,7 +121,7 @@ export const COMMANDS = {
 		command: "bash",
 		args: [
 			"-c",
-			"set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log",
+			"set -o pipefail && mkdir -p reports/list && node tools/list-scopes.mjs | tee reports/list/scopes.log",
 		],
 	},
 	doctor: {
@@ -174,8 +174,6 @@ export const COMMANDS = {
 		],
 	},
 };
-
-export const SPECIAL_COMMANDS = new Set(["list:scopes"]);
 
 export function resolveCommand(cmd, args) {
 	if (cmd === "tooling") {

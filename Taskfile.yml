@@ -82,7 +82,7 @@ tasks:
 
   list:scopes:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log'
+      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/list-scopes.mjs | tee reports/list/scopes.log'
 
   doctor:
     cmds:
