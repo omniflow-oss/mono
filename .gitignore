@@ -2,6 +2,7 @@
 reports/
 node_modules/
 .pnpm-store/
+.cache/
 .pnp.cjs
 .pnp.data.json
 .target/
