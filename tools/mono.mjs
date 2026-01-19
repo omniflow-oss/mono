@@ -61,11 +61,11 @@ const run = (command, commandArgs) => {
 	return result.status ?? 1;
 };
 
-const taskAvailable = (() => {
+const taskAvailable = () => {
 	const result = spawnSync("task", ["--version"], { stdio: "ignore" });
 	if (result.error && result.error.code === "ENOENT") return false;
 	return result.status === 0;
-})();
+};
 
 const taskInstaller =
 	'if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi';
@@ -84,7 +84,7 @@ const runTask = (taskName, extra = []) => {
 			typeof entry.args === "function" ? entry.args(extra) : entry.args;
 		return run(command, args);
 	}
-	if (!taskAvailable) ensureTask();
+	if (!taskAvailable()) ensureTask();
 	return run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
 };
 

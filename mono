@@ -40,6 +40,5 @@ if [[ "$MONO_IN_DOCKER" == "1" ]]; then
   export GROUP_ID=$(id -g)
   docker compose -f infra/tools.compose.yaml run --rm tools node tools/mono.mjs "$@"
 else
-  echo "Docker is required; set MONO_IN_DOCKER=1"
-  exit 1
+  node tools/mono.mjs "$@"
 fi
