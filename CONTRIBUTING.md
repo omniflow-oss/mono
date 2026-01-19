@@ -314,8 +314,7 @@ Latest version includes performance improvements.
 # Restart Docker containers
 ./mono infra down && ./mono infra up
 
-# Or run without Docker
-./mono --native <command>
+Ensure Docker is installed and running, then re-run your command.
 ```
 
 ### Build Failures

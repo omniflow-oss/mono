@@ -94,7 +94,6 @@ Nuxt frontend applications, and automated tooling.
 | `--changed` | Run only for changed files (default) |
 | `--all` | Run for all scopes |
 | `--dry-run` | Show what would run without executing |
-| `--native` | Run without Docker |
 
 ### Scaffolding
 
@@ -104,6 +103,10 @@ Nuxt frontend applications, and automated tooling.
 | `./mono new app <name>` | Create new Nuxt app |
 | `./mono new lib <name>` | Create new Java library |
 | `./mono new package <name>` | Create new TypeScript package |
+| `./mono delete service <name>` | Remove Quarkus service + contract + docs |
+| `./mono delete app <name>` | Remove Nuxt app |
+| `./mono delete lib <name>` | Remove Java library |
+| `./mono delete package <name>` | Remove TypeScript package |
 
 ### Contracts
 
@@ -281,9 +284,7 @@ refactor: simplify payment flow
 
 #### Docker issues
 
-```bash
-./mono --native  # Run without Docker
-```
+Ensure Docker is installed and running, then re-run your command.
 
 ## 📖 Additional Resources
 

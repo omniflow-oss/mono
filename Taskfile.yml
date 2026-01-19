@@ -55,18 +55,17 @@ tasks:
 
   docs:lint:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/docs && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/docs/markdownlint.log'
+      - bash -c 'set -o pipefail; report_root="reports"; if [ ! -w "$report_root" ]; then report_root="/tmp/mono-reports"; fi; mkdir -p "$report_root/docs"; pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee "$report_root/docs/markdownlint.log"'
 
   docs:build:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log'
-      - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log'
-      - bash -c 'set -o pipefail && pnpm -C docs/site run build | tee reports/docs/vitepress-build.log'
+      - bash -c 'set -o pipefail; report_root="reports"; if [ ! -w "$report_root" ]; then report_root="/tmp/mono-reports"; fi; mkdir -p "$report_root/docs"; node tools/contracts/bundle-all.mjs | tee "$report_root/docs/bundle-all.log"'
+      - bash -c 'set -o pipefail; report_root="reports"; if [ ! -w "$report_root" ]; then report_root="/tmp/mono-reports"; fi; mkdir -p "$report_root/docs"; node tools/contracts/gen-clients.mjs | tee "$report_root/docs/gen-clients.log"'
+      - bash -c 'set -o pipefail; report_root="reports"; if [ ! -w "$report_root" ]; then report_root="/tmp/mono-reports"; fi; mkdir -p "$report_root/docs"; pnpm -C docs/site run build | tee "$report_root/docs/vitepress-build.log"'
 
   docs:serve:
     cmds:
-      - mkdir -p reports/docs
-      - bash -c 'pnpm -C docs/site run dev 2>&1 | tee reports/docs/vitepress-dev.log'
+      - bash -c 'set -o pipefail; report_root="reports"; if [ ! -w "$report_root" ]; then report_root="/tmp/mono-reports"; fi; mkdir -p "$report_root/docs"; pnpm -C docs/site run dev 2>&1 | tee "$report_root/docs/vitepress-dev.log"'
 
   infra:up:
     cmds:
