@@ -4,6 +4,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.tools
     working_dir: /work
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     volumes:
       - ..:/work
       - m2:/root/.m2
