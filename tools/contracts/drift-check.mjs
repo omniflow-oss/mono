@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import yaml from "js-yaml";
+import { normalizeOpenapi } from "./normalize.mjs";
 import { contractPathFor } from "./utils.mjs";
 
 const PORTS_PATH = "infra/ports.yaml";
@@ -54,7 +55,8 @@ async function runDiff(svc, port, contractPath) {
 	}
 
 	const tmpPath = `${TMP_DIR}/openapi-${svc}.yaml`;
-	writeFileSync(tmpPath, openapiText);
+	const normalized = normalizeOpenapi(openapiText);
+	writeFileSync(tmpPath, normalized);
 
 	const result = spawnSync(
 		"pnpm",

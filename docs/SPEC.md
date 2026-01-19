@@ -120,8 +120,8 @@ repo/
 - Debug (Quarkus): `5005` (shared) or per-service optional later
 
 ### 2.3 Tooling runtime
-- Docker-first is default
-- Opt-out: `./mono --native ...` or `MONO_IN_DOCKER=0`
+- Docker-first is required
+- `./mono --native` is not supported
 
 ---
 
@@ -233,7 +233,7 @@ Flags:
 - `--changed`
 - `--parallel`
 - `--all`
-- `--native` (wrapper only)
+- `--native` (wrapper only; not supported)
 - `--dry-run` (selection + scaffold preview)
 
 ### 6.2 Scope rules

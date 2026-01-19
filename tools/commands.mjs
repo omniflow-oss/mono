@@ -133,7 +133,7 @@ export const COMMANDS = {
 		command: "bash",
 		args: [
 			"-c",
-			"set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log",
+			"set -o pipefail && mkdir -p reports/doctor && node tools/tooling/doctor.mjs | tee reports/doctor/tooling.log && node tools/scaffold/ports.cjs doctor | tee reports/doctor/ports.log",
 		],
 	},
 	"tooling:test": {

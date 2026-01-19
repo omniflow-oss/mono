@@ -74,7 +74,7 @@ Include:
 ### 2.3 Add docker-first wrapper
 Create root executable script `mono`:
 - docker is default
-- opt-out with `--native` or `MONO_IN_DOCKER=0`
+- Docker required; `--native` is not supported
 - runs `node tools/mono.mjs ...` inside container
 
 **Verify**
@@ -108,7 +108,7 @@ Include:
 Configure format/lint rules and ignore generated folders.
 
 **Verify**
-- `./mono --native bootstrap` works (native optional)
+- `./mono bootstrap` uses Docker (native not supported)
 - In docker: `./mono bootstrap` works.
 
 ---

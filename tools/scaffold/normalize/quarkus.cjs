@@ -1,6 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { DEFAULT_GROUP_ID } = require("../constants.cjs");
+const { DEFAULT_BASE_PACKAGE, DEFAULT_GROUP_ID } = require("../constants.cjs");
 
 function readBackVersion() {
 	const backPomPath = path.join(process.cwd(), "back/pom.xml");
@@ -40,6 +40,90 @@ function ensureParentPom(serviceDir) {
 	fs.writeFileSync(pomPath, xml);
 }
 
+function writeIfMissing(filePath, contents) {
+	if (!fs.existsSync(filePath)) {
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(filePath, contents);
+	}
+}
+
+function servicePackage(name) {
+	return `${DEFAULT_BASE_PACKAGE}.${name.replace(/-/g, "")}`;
+}
+
+function ensureHealthResource(serviceDir, basePackage) {
+	const pkgPath = path.join(
+		serviceDir,
+		"src/main/java",
+		...basePackage.split("."),
+	);
+	const testPath = path.join(
+		serviceDir,
+		"src/test/java",
+		...basePackage.split("."),
+	);
+
+	writeIfMissing(
+		path.join(pkgPath, "HealthResource.java"),
+		`package ${basePackage};
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/health")
+public class HealthResource {
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String health() {
+		return "ok";
+	}
+}
+`,
+	);
+
+	writeIfMissing(
+		path.join(testPath, "HealthResourceTest.java"),
+		`package ${basePackage};
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+@QuarkusTest
+public class HealthResourceTest {
+	@Test
+	public void healthEndpoint() {
+		given()
+			.when().get("/health")
+			.then()
+			.statusCode(200)
+			.body(is("ok"));
+	}
+}
+`,
+	);
+
+	writeIfMissing(
+		path.join(testPath, "ArchitectureTest.java"),
+		`package ${basePackage};
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+@Disabled("ArchUnit rules pending")
+public class ArchitectureTest {
+	@Test
+	public void placeholder() {
+	}
+}
+`,
+	);
+}
+
 function normalizeQuarkus(serviceDir, name, port) {
 	ensureParentPom(serviceDir);
 	const propsPath = path.join(
@@ -64,12 +148,11 @@ function normalizeQuarkus(serviceDir, name, port) {
 				props += `\n${l}`;
 			}
 		}
-		fs.writeFileSync(
-			propsPath,
-			`${props.replace(/\n{2,}/g, "\n")}
-`,
-		);
+		fs.writeFileSync(propsPath, `${props.replace(/\n{2,}/g, "\n")}\n`);
 	}
+
+	const basePackage = servicePackage(name);
+	ensureHealthResource(serviceDir, basePackage);
 }
 
 module.exports = { normalizeQuarkus };
