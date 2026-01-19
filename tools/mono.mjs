@@ -1,8 +1,21 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { getChangedScopes } from "./changed.mjs";
+import {
+	CHECK_STEPS,
+	COMMANDS,
+	SCOPED_COMMANDS,
+	SPECIAL_COMMANDS,
+	resolveCommand,
+} from "./commands.mjs";
+import {
+	isBackScope,
+	isFrontScope,
+	mvnForScope,
+	pnpmForScope,
+} from "./scopes.mjs";
 
 const args = process.argv.slice(2);
 const cmd = args[0] || "help";
@@ -54,126 +67,24 @@ const taskAvailable = (() => {
 	return result.status === 0;
 })();
 
-const runTaskFallback = (taskName, extra = []) => {
-	switch (taskName) {
-		case "bootstrap":
-			return run("bash", [
-				"-c",
-				"pnpm install; if [ -f docs/site/package.json ]; then pnpm -C docs/site install; fi",
-			]);
-		case "fmt":
-			return run("bash", [
-				"-c",
-				"pnpm biome format --write . && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply",
-			]);
-		case "lint":
-			return run("bash", [
-				"-c",
-				'set -o pipefail && mkdir -p reports/lint && pnpm biome lint . | tee reports/lint/biome.log && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check | tee reports/lint/spotless.log && mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml | tee reports/lint/spotbugs.log && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/lint/spectral.log && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/lint/markdown.log',
-			]);
-		case "typecheck":
-			return run("bash", [
-				"-c",
-				"mkdir -p reports/typecheck && pnpm -r --filter ./front... tsc --noEmit | tee reports/typecheck/front-tsc.log",
-			]);
-		case "test":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/test && mvn -f back/pom.xml test | tee reports/test/maven.log && rm -rf reports/vitest && mkdir -p reports/vitest && pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml | tee reports/vitest/vitest.log",
-			]);
-		case "build":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && rm -rf reports/build && mkdir -p reports/build && mvn -f back/pom.xml -DskipTests package | tee reports/build/maven.log && pnpm -r --filter ./front... build | tee reports/build/front-build.log",
-			]);
-		case "check":
-			return run("bash", [
-				"-c",
-				"node tools/mono.mjs lint --changed && node tools/mono.mjs typecheck --changed && node tools/mono.mjs test --changed && node tools/mono.mjs build --changed",
-			]);
-		case "contracts:lint":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/contracts && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/contracts/spectral.log",
-			]);
-		case "contracts:breaking":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/contracts && node tools/contracts/breaking.mjs | tee reports/contracts/breaking.log",
-			]);
-		case "contracts:build":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/contracts && node tools/contracts/bundle-all.mjs | tee reports/contracts/bundle-all.log && node tools/contracts/gen-clients.mjs | tee reports/contracts/gen-clients.log && pnpm -r --filter ./front... typecheck | tee reports/contracts/typecheck.log",
-			]);
-		case "docs:lint":
-			return run("bash", [
-				"-c",
-				'set -o pipefail && mkdir -p reports/docs && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/docs/markdownlint.log',
-			]);
-		case "docs:build":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log && cd docs/site && pnpm vitepress build | tee ../../reports/docs/vitepress-build.log",
-			]);
-		case "list:ports":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/list && node tools/scaffold/ports.cjs list | tee reports/list/ports.log",
-			]);
-		case "list:scopes":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log",
-			]);
-		case "doctor":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log",
-			]);
-		case "tooling:test":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/tooling && pnpm vitest run | tee reports/tooling/vitest.log",
-			]);
-		case "tooling:test:e2e":
-			return run("bash", [
-				"-c",
-				"set -o pipefail && mkdir -p reports/tooling && pnpm vitest run --dir tools/test/e2e | tee reports/tooling/vitest-e2e.log",
-			]);
-		case "new:app":
-			return run("bash", [
-				"-c",
-				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/app.cjs ${extra.join(" ")} | tee reports/new/app.log`,
-			]);
-		case "new:service":
-			return run("bash", [
-				"-c",
-				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/service.cjs ${extra.join(" ")} | tee reports/new/service.log`,
-			]);
-		case "new:lib":
-			return run("bash", [
-				"-c",
-				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/lib.cjs ${extra.join(" ")} | tee reports/new/lib.log`,
-			]);
-		case "new:package":
-			return run("bash", [
-				"-c",
-				`set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs ${extra.join(" ")} | tee reports/new/package.log`,
-			]);
-		default:
-			log.error(
-				`Task runner not installed and no fallback for task: ${taskName}`,
-			);
-			if (extra.length) log.info(`Args: ${extra.join(" ")}`);
-			return 1;
-	}
-};
+const taskInstaller =
+	'if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi';
+
+const ensureTask = () => run("bash", ["-c", taskInstaller]);
 
 const runTask = (taskName, extra = []) => {
-	if (!taskAvailable) {
-		return runTaskFallback(taskName, extra);
+	const entry = COMMANDS[taskName];
+	if (!entry) {
+		log.error(`Unknown task: ${taskName}`);
+		return 1;
 	}
+	if (SPECIAL_COMMANDS.has(taskName)) {
+		const command = entry.command;
+		const args =
+			typeof entry.args === "function" ? entry.args(extra) : entry.args;
+		return run(command, args);
+	}
+	if (!taskAvailable) ensureTask();
 	return run("task", extra.length ? [taskName, "--", ...extra] : [taskName]);
 };
 
@@ -195,22 +106,6 @@ const parseScopes = async () => {
 	if (useAll) return [];
 	if (useChanged) return await getChangedScopes();
 	return scopes;
-};
-
-const isBackScope = (s) =>
-	s.startsWith("back/services/") || s.startsWith("back/libs/");
-const isFrontScope = (s) =>
-	s.startsWith("front/apps/") || s.startsWith("front/packages/");
-
-const mvnFor = (scopePath, goal, extra = []) => {
-	const name = scopePath.split("/").pop();
-	const args = ["-f", "back/pom.xml", "-pl", `:${name}`, "-am", goal, ...extra];
-	return run("mvn", args);
-};
-
-const pnpmFor = (scopePath, script, extra = []) => {
-	const args = ["-C", scopePath, script, ...extra];
-	return run("pnpm", args);
 };
 
 const runScoped = async (scopeList, action) => {
@@ -274,7 +169,6 @@ ${colors.yellow}Flags:${colors.reset}
   --changed       Run only for changed files (default)
   --all           Run for all scopes
   --dry-run       Show what would run without executing
-  --native        Run without Docker
   --verbose, -v   Enable verbose output
 
 ${colors.yellow}Examples:${colors.reset}
@@ -309,112 +203,106 @@ ${colors.yellow}Examples:${colors.reset}
 	process.exit(0);
 }
 
-if (cmd === "tooling") {
-	if (args[1] === "test" && args.includes("--e2e"))
-		process.exit(runTask("tooling:test:e2e"));
-	if (args[1] === "test") process.exit(runTask("tooling:test"));
-}
-
-if (cmd === "list" && args[1] === "scopes") {
-	listScopes();
-	process.exit(0);
-}
-
-if (cmd === "list" && args[1] === "ports") {
-	process.exit(runTask("list:ports"));
-}
-
-if (cmd === "doctor") {
-	process.exit(runTask("doctor"));
-}
-
-if (cmd.startsWith("contracts")) {
-	const name = cmd.includes(":") ? cmd : `contracts:${args[1] || "build"}`;
-	process.exit(runTask(name));
-}
-
-if (cmd.startsWith("docs")) {
-	const name = cmd.includes(":") ? cmd : `docs:${args[1] || "build"}`;
-	process.exit(runTask(name));
-}
-
-if (cmd.startsWith("infra")) {
-	const name = cmd.includes(":") ? cmd : `infra:${args[1] || "up"}`;
-	process.exit(runTask(name));
-}
-
-if (cmd === "new") {
-	const target = args[1];
-	if (!target) {
-		console.error("Missing new target: service|app|lib|package");
-		process.exit(1);
+const resolved = resolveCommand(cmd, args);
+if (SPECIAL_COMMANDS.has(resolved.name)) {
+	if (resolved.name === "list:scopes") {
+		listScopes();
+		process.exit(0);
 	}
-	const name = args[2];
-	const taskName = `new:${target}`;
-	process.exit(runTask(taskName, name ? [name] : []));
 }
 
 const scopeList = await parseScopes();
 
 if (useChanged && scopeList.some((s) => s.startsWith("__"))) {
-	process.exit(runTask(cmd));
+	process.exit(runTask(resolved.name, resolved.extra));
 }
 
-if (scopeList.length === 0 || useAll) {
-	process.exit(runTask(cmd));
+if (scopeList.length === 0 || useAll || !SCOPED_COMMANDS.has(resolved.name)) {
+	process.exit(runTask(resolved.name, resolved.extra));
 }
 
-if (cmd === "dev") {
+if (resolved.name === "dev") {
 	await runScoped(scopeList, {
-		back: (s) => mvnFor(s, "quarkus:dev"),
-		front: (s) => pnpmFor(s, "dev"),
+		back: (s) => {
+			const [command, args] = mvnForScope(s, "quarkus:dev");
+			return run(command, args);
+		},
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "dev");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "fmt") {
+if (resolved.name === "fmt") {
 	await runScoped(scopeList, {
-		back: (s) => mvnFor(s, "spotless:apply"),
-		front: (s) => pnpmFor(s, "fmt"),
+		back: (s) => {
+			const [command, args] = mvnForScope(s, "spotless:apply");
+			return run(command, args);
+		},
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "fmt");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "lint") {
+if (resolved.name === "lint") {
 	await runScoped(scopeList, {
-		back: (s) => mvnFor(s, "spotless:check"),
-		front: (s) => pnpmFor(s, "lint"),
+		back: (s) => {
+			const [command, args] = mvnForScope(s, "spotless:check");
+			return run(command, args);
+		},
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "lint");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "typecheck") {
+if (resolved.name === "typecheck") {
 	await runScoped(scopeList, {
 		back: () => 0,
-		front: (s) => pnpmFor(s, "typecheck"),
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "typecheck");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "test") {
+if (resolved.name === "test") {
 	await runScoped(scopeList, {
-		back: (s) => mvnFor(s, "test"),
-		front: (s) => pnpmFor(s, "test:ci"),
+		back: (s) => {
+			const [command, args] = mvnForScope(s, "test");
+			return run(command, args);
+		},
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "test:ci");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "build") {
+if (resolved.name === "build") {
 	await runScoped(scopeList, {
-		back: (s) => mvnFor(s, "package", ["-DskipTests"]),
-		front: (s) => pnpmFor(s, "build"),
+		back: (s) => {
+			const [command, args] = mvnForScope(s, "package", ["-DskipTests"]);
+			return run(command, args);
+		},
+		front: (s) => {
+			const [command, args] = pnpmForScope(s, "build");
+			return run(command, args);
+		},
 	});
 	process.exit(0);
 }
 
-if (cmd === "check") {
-	const steps = ["lint", "typecheck", "test", "build"];
-
+if (resolved.name === "check") {
 	if (scopeList.length === 0) {
 		log.warn("No changed scopes to check");
 		process.exit(0);
@@ -425,9 +313,9 @@ if (cmd === "check") {
 
 	for (const scope of scopeList) {
 		log.dim(`\n--- Checking: ${scope} ---`);
-		for (let i = 0; i < steps.length; i++) {
-			const step = steps[i];
-			log.step(`[${i + 1}/${steps.length}] ${step}...`);
+		for (let i = 0; i < CHECK_STEPS.length; i++) {
+			const step = CHECK_STEPS[i];
+			log.step(`[${i + 1}/${CHECK_STEPS.length}] ${step}...`);
 			const status = run("node", ["tools/mono.mjs", step, "--scope", scope]);
 			if (status) {
 				log.error(`${step} failed in ${scope}`);
@@ -445,4 +333,4 @@ if (cmd === "check") {
 	process.exit(0);
 }
 
-process.exit(runTask(cmd));
+process.exit(runTask(resolved.name, resolved.extra));

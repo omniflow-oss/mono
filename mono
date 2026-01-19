@@ -12,8 +12,8 @@ fi
 MONO_IN_DOCKER=${MONO_IN_DOCKER:-1}
 
 if [[ "${1:-}" == "--native" ]]; then
-  MONO_IN_DOCKER=0
-  shift
+  echo "Docker is required; --native is not supported"
+  exit 1
 fi
 
 if [[ "${1:-}" == infra || "${1:-}" == infra:* ]]; then
@@ -32,9 +32,14 @@ if [[ "${1:-}" == infra || "${1:-}" == infra:* ]]; then
 fi
 
 if [[ "$MONO_IN_DOCKER" == "1" ]]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is required but not installed"
+    exit 1
+  fi
   export USER_ID=$(id -u)
   export GROUP_ID=$(id -g)
   docker compose -f infra/tools.compose.yaml run --rm tools node tools/mono.mjs "$@"
 else
-  node tools/mono.mjs "$@"
+  echo "Docker is required; set MONO_IN_DOCKER=1"
+  exit 1
 fi

@@ -7,110 +7,99 @@ tasks:
 
   bootstrap:
     cmds:
-      - bash -c 'set -euo pipefail; if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi; pnpm install; if [ -f docs/site/package.json ]; then pnpm -C docs/site install; fi'
+      - bash -c 'set -euo pipefail; if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi; pnpm install'
 
   fmt:
     cmds:
-      - pnpm biome format --write .
-      - mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
+      - ./mono fmt
 
   lint:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/lint && pnpm biome lint . | tee reports/lint/biome.log'
-      - bash -c 'set -o pipefail && mvn -f back/pom.xml -q com.diffplug.spotless:spotless-maven-plugin:2.44.0:check | tee reports/lint/spotless.log'
-      - bash -c 'set -o pipefail && mvn -f back/pom.xml -q -DskipTests compile com.github.spotbugs:spotbugs-maven-plugin:4.8.6.0:check -Dspotbugs.effort=Default -Dspotbugs.threshold=Medium -Dspotbugs.excludeFilterFile=config/spotbugs/excludes.xml | tee reports/lint/spotbugs.log'
-      - bash -c 'set -o pipefail && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/lint/spectral.log'
-      - bash -c 'set -o pipefail && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/lint/markdown.log'
+      - ./mono lint
 
   typecheck:
     cmds:
-      - mkdir -p reports/typecheck && pnpm -r --filter ./front... tsc --noEmit | tee reports/typecheck/front-tsc.log
+      - ./mono typecheck
 
   test:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/test && mvn -f back/pom.xml test | tee reports/test/maven.log'
-      - bash -c 'set -o pipefail && rm -rf reports/vitest && mkdir -p reports/vitest && pnpm vitest run --reporter=junit --outputFile=reports/vitest/root.junit.xml | tee reports/vitest/vitest.log'
+      - ./mono test
 
   build:
     cmds:
-      - bash -c 'set -o pipefail && rm -rf reports/build && mkdir -p reports/build && mvn -f back/pom.xml -DskipTests package | tee reports/build/maven.log'
-      - bash -c 'set -o pipefail && pnpm -r --filter ./front... build | tee reports/build/front-build.log'
+      - ./mono build
 
   check:
-    deps: [lint, typecheck, test, build]
+    cmds:
+      - ./mono check
 
   contracts:lint:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/contracts && pnpm spectral lint --ruleset contracts/rules/spectral.yaml contracts/rest/*.openapi.yaml | tee reports/contracts/spectral.log'
+      - ./mono contracts:lint
 
   contracts:breaking:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/contracts && node tools/contracts/breaking.mjs | tee reports/contracts/breaking.log'
+      - ./mono contracts:breaking
 
   contracts:build:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/contracts && node tools/contracts/bundle-all.mjs | tee reports/contracts/bundle-all.log'
-      - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/contracts/gen-clients.log'
-      - bash -c 'set -o pipefail && pnpm -r --filter ./front... typecheck | tee reports/contracts/typecheck.log'
+      - ./mono contracts:build
 
   docs:lint:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/docs && pnpm markdownlint-cli2 "docs/**/*.md" "README.md" | tee reports/docs/markdownlint.log'
+      - ./mono docs:lint
 
   docs:build:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/docs && node tools/contracts/bundle-all.mjs | tee reports/docs/bundle-all.log'
-      - bash -c 'set -o pipefail && node tools/contracts/gen-clients.mjs | tee reports/docs/gen-clients.log'
-      - bash -c 'set -o pipefail && cd docs/site && pnpm vitepress build | tee ../../reports/docs/vitepress-build.log'
+      - ./mono docs:build
 
   docs:serve:
     cmds:
-      - mkdir -p reports/docs
-      - bash -c 'cd docs/site && pnpm vitepress dev 2>&1 | tee ../../reports/docs/vitepress-dev.log'
+      - ./mono docs:serve
 
   infra:up:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml up -d | tee reports/infra/up.log'
+      - ./mono infra:up
 
   infra:down:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/infra && docker compose -f infra/tools.compose.yaml down | tee reports/infra/down.log'
+      - ./mono infra:down
 
   list:ports:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/scaffold/ports.cjs list | tee reports/list/ports.log'
+      - ./mono list ports
 
   list:scopes:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/list && node tools/mono.mjs list scopes | tee reports/list/scopes.log'
+      - ./mono list scopes
 
   doctor:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/doctor && node tools/scaffold/ports.cjs doctor | tee reports/doctor/doctor.log'
+      - ./mono doctor
 
   new:app:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/app.cjs {{.CLI_ARGS}} | tee reports/new/app.log'
+      - ./mono new app {{.CLI_ARGS}}
 
   new:service:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/service.cjs {{.CLI_ARGS}} | tee reports/new/service.log'
+      - ./mono new service {{.CLI_ARGS}}
 
   new:lib:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/lib.cjs {{.CLI_ARGS}} | tee reports/new/lib.log'
+      - ./mono new lib {{.CLI_ARGS}}
 
   new:package:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/new && node tools/scaffold/actions/package.cjs {{.CLI_ARGS}} | tee reports/new/package.log'
+      - ./mono new package {{.CLI_ARGS}}
 
   tooling:test:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/tooling && pnpm vitest run | tee reports/tooling/vitest.log'
+      - ./mono tooling test
 
   tooling:test:e2e:
     cmds:
-      - bash -c 'set -o pipefail && mkdir -p reports/tooling && pnpm vitest run --dir tools/test/e2e | tee reports/tooling/vitest-e2e.log'
+      - ./mono tooling test --e2e
 
   db:migrate:
     cmds:

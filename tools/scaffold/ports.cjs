@@ -1,5 +1,5 @@
 const fs = require("node:fs");
-const { execSync } = require("node:child_process");
+const net = require("node:net");
 const yaml = require("js-yaml");
 
 const PORTS_PATH = "infra/ports.yaml";
@@ -47,7 +47,7 @@ function listPorts() {
 	console.log(yaml.dump(data, { lineWidth: -1 }));
 }
 
-function doctorPorts() {
+async function doctorPorts() {
 	const data = readPorts();
 	const all = [];
 	for (const p of Object.values(data.back.services || {})) all.push(p);
@@ -66,10 +66,9 @@ function doctorPorts() {
 		}
 	}
 
-	// Check for ports in use on the system
 	const portsInUse = [];
 	for (const port of all) {
-		if (isPortInUse(port)) {
+		if (await isPortInUse(port)) {
 			portsInUse.push(port);
 		}
 	}
@@ -80,39 +79,25 @@ function doctorPorts() {
 }
 
 function isPortInUse(port) {
-	try {
-		let result = "";
-		try {
-			result = execSync(`lsof -iTCP:${port} -sTCP:LISTEN -P -n 2>/dev/null`, {
-				encoding: "utf8",
+	return new Promise((resolve) => {
+		const server = net
+			.createServer()
+			.once("error", () => resolve(true))
+			.once("listening", () => {
+				server.close(() => resolve(false));
 			});
-		} catch (err1) {
-			try {
-				result = execSync(`ss -ltn 'sport = :${port}' 2>/dev/null`, {
-					encoding: "utf8",
-				});
-			} catch (err2) {
-				try {
-					result = execSync(
-						`netstat -an 2>/dev/null | grep ':${port} ' || true`,
-						{ encoding: "utf8" },
-					);
-				} catch {
-					result = "";
-				}
-			}
-		}
-		return result && /(^|\n).*\b${port}\b/.test(result);
-	} catch (error) {
-		// lsof/netstat not available or failed to check
-		return false;
-	}
+		server.listen(port, "127.0.0.1");
+	});
 }
 
 if (require.main === module) {
 	const cmd = process.argv[2];
 	if (cmd === "list") listPorts();
-	if (cmd === "doctor") doctorPorts();
+	if (cmd === "doctor")
+		doctorPorts().catch((err) => {
+			console.error(err.message || err);
+			process.exit(1);
+		});
 }
 
 module.exports = {

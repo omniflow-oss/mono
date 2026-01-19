@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { contractNameFromPath, listContractSpecs } from "./utils.mjs";
 
 const baseDir = "front/packages/api-clients";
 mkdirSync(baseDir, { recursive: true });
@@ -19,21 +20,14 @@ if (!existsSync(path.join(baseDir, "package.json"))) {
 	);
 }
 
-const specs = readdirSync("contracts/rest").filter((f) =>
-	f.endsWith(".openapi.yaml"),
-);
-for (const spec of specs) {
-	const svc = spec.replace(".openapi.yaml", "");
+const specs = listContractSpecs();
+for (const specPath of specs) {
+	const svc = contractNameFromPath(specPath);
 	const outDir = path.join(baseDir, svc);
 	mkdirSync(outDir, { recursive: true });
 	const result = spawnSync(
 		"pnpm",
-		[
-			"openapi-typescript",
-			path.join("contracts/rest", spec),
-			"-o",
-			path.join(outDir, "types.ts"),
-		],
+		["openapi-typescript", specPath, "-o", path.join(outDir, "types.ts")],
 		{ stdio: "inherit" },
 	);
 	if (result.status) process.exit(result.status);

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { listContractSpecs } from "./utils.mjs";
 
 const base = process.env.CHANGE_BASE || "origin/main";
 const diff = spawnSync(
@@ -9,6 +10,10 @@ const diff = spawnSync(
 const files = diff.stdout
 	.split("\n")
 	.filter((f) => f.endsWith(".openapi.yaml"));
+
+if (files.length === 0 && listContractSpecs().length === 0) {
+	process.exit(0);
+}
 
 for (const f of files) {
 	const result = spawnSync(

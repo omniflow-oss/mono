@@ -1,15 +1,12 @@
 import { spawnSync } from "node:child_process";
 
-const TOOLING_PREFIXES = [
-	"Taskfile.yml",
-	"tools/",
-	".github/",
-	"infra/tools.compose.yaml",
-	"package.json",
-	"pnpm-workspace.yaml",
-	"biome.json",
-	"back/pom.xml",
-];
+import { readFileSync } from "node:fs";
+
+const config = JSON.parse(
+	readFileSync(new URL("./changed.config.json", import.meta.url), "utf8"),
+);
+
+const TOOLING_PREFIXES = config.toolingPrefixes ?? [];
 
 const scopeFromPath = (filePath, base) => {
 	const parts = filePath.split("/");
@@ -27,12 +24,12 @@ export function mapChangedFiles(files) {
 			continue;
 		}
 
-		if (f.startsWith("contracts/")) {
+		if (f.startsWith(config.contractsPrefix ?? "contracts/")) {
 			scopes.add("__CONTRACTS__");
 			continue;
 		}
 
-		if (f.startsWith("docs/")) {
+		if (f.startsWith(config.docsPrefix ?? "docs/")) {
 			scopes.add("__DOCS__");
 			continue;
 		}
@@ -54,11 +51,18 @@ export function mapChangedFiles(files) {
 }
 
 export async function getChangedScopes(
-	baseRef = process.env.CHANGE_BASE || "origin/main",
+	baseRef = process.env.CHANGE_BASE ||
+		process.env.GITHUB_BASE_REF ||
+		"origin/main",
 ) {
-	const diff = spawnSync("git", ["diff", "--name-only", baseRef], {
+	let diff = spawnSync("git", ["diff", "--name-only", baseRef], {
 		encoding: "utf8",
 	});
+	if (diff.status) {
+		diff = spawnSync("git", ["diff", "--name-only", "HEAD~1"], {
+			encoding: "utf8",
+		});
+	}
 	const files = diff.stdout.split("\n").filter(Boolean);
 	return mapChangedFiles(files);
 }

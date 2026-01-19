@@ -1,4 +1,3 @@
-const { execSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
@@ -7,30 +6,23 @@ const { normalizeQuarkus } = require("../normalize/quarkus.cjs");
 const { moveDir } = require("../move.cjs");
 const { insertModule } = require("../maven.cjs");
 const { DEFAULT_GROUP_ID } = require("../constants.cjs");
+const { ensureDir, run, validateKebab } = require("../utils.cjs");
 
 const name = process.argv[2];
-if (!name || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
-	throw new Error("Invalid name; use lowercase-kebab");
-}
+validateKebab(name);
 
 const port = allocateServicePort(name);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "quarkus-"));
-const { spawnSync } = require("node:child_process");
-
-spawnSync(
-	"mvn",
-	[
-		"io.quarkus.platform:quarkus-maven-plugin:3.30.6:create",
-		`-DprojectGroupId=${DEFAULT_GROUP_ID}`,
-		`-DprojectArtifactId=${name}`,
-		"-Dextensions=rest",
-		`-DoutputDirectory=${tmp}`,
-	],
-	{ stdio: "inherit" },
-);
+run("mvn", [
+	"io.quarkus.platform:quarkus-maven-plugin:3.30.6:create",
+	`-DprojectGroupId=${DEFAULT_GROUP_ID}`,
+	`-DprojectArtifactId=${name}`,
+	"-Dextensions=rest",
+	`-DoutputDirectory=${tmp}`,
+]);
 
 const dest = path.join("back/services", name);
-fs.mkdirSync(path.dirname(dest), { recursive: true });
+ensureDir(path.dirname(dest));
 fs.rmSync(dest, { recursive: true, force: true });
 moveDir(path.join(tmp, name), dest);
 
@@ -38,7 +30,7 @@ normalizeQuarkus(dest, name, port);
 insertModule("back/pom.xml", `services/${name}`);
 
 const contractPath = path.join("contracts/rest", `${name}.openapi.yaml`);
-fs.mkdirSync(path.dirname(contractPath), { recursive: true });
+ensureDir(path.dirname(contractPath));
 if (!fs.existsSync(contractPath)) {
 	fs.writeFileSync(
 		contractPath,
@@ -47,7 +39,7 @@ if (!fs.existsSync(contractPath)) {
 }
 
 const docDir = path.join("docs/handbook/services");
-fs.mkdirSync(docDir, { recursive: true });
+ensureDir(docDir);
 const docPath = path.join(docDir, `${name}.md`);
 if (!fs.existsSync(docPath)) {
 	fs.writeFileSync(docPath, `# ${name}\n`);

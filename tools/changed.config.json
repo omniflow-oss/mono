@@ -1,0 +1,14 @@
+{
+	"toolingPrefixes": [
+		"Taskfile.yml",
+		"tools/",
+		".github/",
+		"infra/tools.compose.yaml",
+		"package.json",
+		"pnpm-workspace.yaml",
+		"biome.json",
+		"back/pom.xml"
+	],
+	"contractsPrefix": "contracts/",
+	"docsPrefix": "docs/"
+}

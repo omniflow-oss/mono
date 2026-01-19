@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import yaml from "js-yaml";
+import { contractPathFor } from "./utils.mjs";
 
 const PORTS_PATH = "infra/ports.yaml";
-const CONTRACTS_DIR = "contracts/rest";
 const TMP_DIR = ".tmp";
 
 function getAllocatedPorts() {
@@ -45,6 +45,25 @@ async function fetchOpenapi(port) {
 	}
 }
 
+async function runDiff(svc, port, contractPath) {
+	console.log(`[drift-check] Service: ${svc} (port ${port})`);
+	const openapiText = await fetchOpenapi(port);
+	if (!openapiText) {
+		console.warn(`  Could not fetch /q/openapi for ${svc}`);
+		return false;
+	}
+
+	const tmpPath = `${TMP_DIR}/openapi-${svc}.yaml`;
+	writeFileSync(tmpPath, openapiText);
+
+	const result = spawnSync(
+		"pnpm",
+		["redocly", "diff", "--severity=error", contractPath, tmpPath],
+		{ stdio: "inherit" },
+	);
+	return Boolean(result.status);
+}
+
 async function main() {
 	const byService = getAllocatedPorts();
 	const touched = getChangedServices();
@@ -54,40 +73,38 @@ async function main() {
 	}
 
 	mkdirSync(TMP_DIR, { recursive: true });
+	const concurrency = Number(process.env.DRIFT_CONCURRENCY || 2);
 	let failed = false;
-	for (const svc of touched) {
-		const port = byService[svc];
-		if (!port) {
-			console.warn(`No assigned port for service: ${svc}`);
-			continue;
-		}
-		const contractPath = `${CONTRACTS_DIR}/${svc}.openapi.yaml`;
-		if (!existsSync(contractPath)) {
-			console.warn(`Missing contract for service: ${svc}`);
-			continue;
-		}
-		console.log(`[drift-check] Service: ${svc} (port ${port})`);
-		const openapiText = await fetchOpenapi(port);
-		if (!openapiText) {
-			console.warn(`  Could not fetch /q/openapi for ${svc}`);
-			continue;
-		}
+	let idx = 0;
 
-		const tmpPath = `${TMP_DIR}/openapi-${svc}.yaml`;
-		writeFileSync(tmpPath, openapiText);
-
-		const result = spawnSync(
-			"pnpm",
-			["redocly", "diff", "--severity=error", contractPath, tmpPath],
-			{ stdio: "inherit" },
-		);
-		if (result.status) {
-			failed = true;
-			console.error(`Drift detected for ${svc}`);
-		} else {
-			console.log(`No drift for ${svc}`);
+	async function worker() {
+		while (idx < touched.length) {
+			const svc = touched[idx++];
+			const port = byService[svc];
+			if (!port) {
+				console.warn(`No assigned port for service: ${svc}`);
+				continue;
+			}
+			const contractPath = contractPathFor(svc);
+			if (!contractPath) {
+				console.warn(`Missing contract for service: ${svc}`);
+				continue;
+			}
+			const hasDrift = await runDiff(svc, port, contractPath);
+			if (hasDrift) {
+				failed = true;
+				console.error(`Drift detected for ${svc}`);
+			} else {
+				console.log(`No drift for ${svc}`);
+			}
 		}
 	}
+
+	const workers = Array.from(
+		{ length: Math.max(1, Math.min(concurrency, touched.length)) },
+		() => worker(),
+	);
+	await Promise.all(workers);
 	process.exit(failed ? 1 : 0);
 }
 

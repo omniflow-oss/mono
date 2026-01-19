@@ -36,14 +36,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Bootstrap
-        run: ./mono --native bootstrap
+        run: ./mono bootstrap
 
       - name: Check
-        run: ./mono --native check --changed
+        run: ./mono check --changed
 
-      - name: Check contracts (if changed)
-        if: steps.changed-files.outputs.contracts == 'true'
-        run: ./mono --native contracts:breaking
+      - name: Check contracts
+        run: ./mono contracts:breaking
 
       - name: Upload reports
         if: always()
@@ -79,10 +78,10 @@ jobs:
           cache: "maven"
 
       - name: Bootstrap
-        run: ./mono --native bootstrap
+        run: ./mono bootstrap
 
       - name: Lint
-        run: ./mono --native lint --changed
+        run: ./mono lint --changed
 
       - name: Upload reports
         if: always()
@@ -118,10 +117,10 @@ jobs:
           cache: "maven"
 
       - name: Bootstrap
-        run: ./mono --native bootstrap
+        run: ./mono bootstrap
 
       - name: Test
-        run: ./mono --native test --changed
+        run: ./mono test --changed
 
       - name: Upload coverage reports
         if: always()
@@ -160,10 +159,10 @@ jobs:
           cache: "maven"
 
       - name: Bootstrap
-        run: ./mono --native bootstrap
+        run: ./mono bootstrap
 
       - name: Build
-        run: ./mono --native build --changed
+        run: ./mono build --changed
 
       - name: Upload build reports
         if: always()
