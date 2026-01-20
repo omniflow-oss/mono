@@ -2,6 +2,7 @@ export default {
 	title: "OmniflowCX",
 	description: "Monorepo tooling, scaffolding, and contracts documentation",
 	base: "/mono/",
+	srcDir: "docs",
 	themeConfig: {
 		nav: [
 			{ text: "Guide", link: "/" },
