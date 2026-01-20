@@ -32,9 +32,14 @@
 	},
 	"lint-staged": {
 		"*.{js,ts,tsx}": ["biome check --write", "biome format --write"],
-		"*.{java}": ["mvn -f back/pom.xml spotless:apply"],
-		"*.{yaml,yml}": ["pnpm spectral lint"],
-		"*.{md}": ["markdownlint-cli2 --fix"]
+		"*.java": ["mvn -f back/pom.xml spotless:apply"],
+		"contracts/**/*.yaml": [
+			"pnpm spectral lint --ruleset contracts/rules/spectral.yaml"
+		],
+		"contracts/**/*.yml": [
+			"pnpm spectral lint --ruleset contracts/rules/spectral.yaml"
+		],
+		"*.md": ["markdownlint-cli2 --fix"]
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",

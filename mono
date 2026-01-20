@@ -36,6 +36,7 @@ if [[ "$MONO_IN_DOCKER" == "1" ]]; then
     echo "Docker is required but not installed"
     exit 1
   fi
+  mkdir -p .cache/m2 .cache/pnpm-store .cache/node
   export USER_ID=$(id -u)
   export GROUP_ID=$(id -g)
   docker compose -f infra/tools.compose.yaml run --rm tools node tools/mono.mjs "$@"

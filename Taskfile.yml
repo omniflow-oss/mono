@@ -7,7 +7,7 @@ tasks:
 
   bootstrap:
     cmds:
-      - bash -c 'set -euo pipefail; if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi; pnpm install'
+      - bash -c 'set -euo pipefail; if ! command -v task >/dev/null 2>&1; then install_dir=/usr/local/bin; if [ ! -w "$install_dir" ]; then install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; fi; curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b "$install_dir"; fi; mkdir -p .cache/node; COREPACK_HOME=/work/.cache/node PNPM_HOME=/work/.cache/node printf "y\n" | pnpm install'
 
   fmt:
     cmds:
