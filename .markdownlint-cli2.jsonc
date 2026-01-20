@@ -6,6 +6,7 @@
 		"docs/PLAN.md",
 		"docs/SPEC.md",
 		"docs/plans/**/*.md",
-		"docs/site/node_modules/**"
+		"docs/site/node_modules/**",
+		".cache/**"
 	]
 }

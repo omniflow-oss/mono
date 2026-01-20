@@ -14,7 +14,8 @@
 			".pnpm-store/**",
 			"**/.pnpm-store/**",
 			"**/.vitepress/dist/**",
-			"**/.vitepress/cache/**"
+			"**/.vitepress/cache/**",
+			".cache/**"
 		]
 	}
 }
